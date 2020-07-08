@@ -2,6 +2,23 @@
 
 set -ex
 
+DEBUG=1
+
+if [ $DEBUG -eq 1 ]; then
+  mv /provision/cni.yaml /provision/cni.yaml.bak
+  curl http://cnv-web.lab.eng.tlv2.redhat.com/cni.yaml > /provision/cni.yaml
+
+  cat /etc/sysconfig/kubelet
+
+  echo MV
+  mv /etc/sysconfig/kubelet /etc/sysconfig/kubelet.bak
+  curl http://cnv-web.lab.eng.tlv2.redhat.com/kubelet > /etc/sysconfig/kubelet
+
+  mv /etc/kubernetes/kubeadm.conf /etc/kubernetes/kubeadm.conf.bak
+  curl http://cnv-web.lab.eng.tlv2.redhat.com/kubeadm.conf > /etc/kubernetes/kubeadm.conf
+fi
+
+
 # Ensure that hugepages are there
 cat /proc/meminfo | sed -e "s/ //g" | grep "HugePages_Total:64"
 
@@ -25,7 +42,7 @@ do
     sleep 2
 done
 
-kubeadm init --config /etc/kubernetes/kubeadm.conf --experimental-kustomize /provision/kubeadm-patches/
+kubeadm init --v=5 --config /etc/kubernetes/kubeadm.conf --experimental-kustomize /provision/kubeadm-patches/
 
 kubectl --kubeconfig=/etc/kubernetes/admin.conf patch deployment coredns -n kube-system -p "$(cat /provision/kubeadm-patches/add-security-context-deployment-patch.yaml)"
 # cni manifest is already configured at provision stage.

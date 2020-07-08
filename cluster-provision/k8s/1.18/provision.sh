@@ -115,9 +115,10 @@ dnf install --skip-broken --nobest --nogpgcheck --disableexcludes=kubernetes -y 
     kubectl-${version} \
     kubernetes-cni
 
+# TODO maybe need to remove, it might collide with mine
 # TODO use config file! this is deprecated
 cat <<EOT >/etc/sysconfig/kubelet
-KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice --feature-gates="BlockVolume=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true"
+KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice --feature-gates="BlockVolume=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true,IPv6DualStack=true"
 EOT
 
 systemctl daemon-reload
@@ -209,6 +210,7 @@ pod_cidr="10.244.0.0/16"
 
 kubeadm init --pod-network-cidr=$pod_cidr --kubernetes-version v${version} --token abcdef.1234567890123456 --experimental-kustomize $kubeadmn_patches_path/
 
+# TODO isnt it duplcate with the previous line ?
 kubectl --kubeconfig=/etc/kubernetes/admin.conf patch deployment coredns -n kube-system -p "$(cat $kubeadmn_patches_path/add-security-context-deployment-patch.yaml)"
 sed -i -e "s?$default_cidr?$pod_cidr?g" $cni_manifest
 kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f "$cni_manifest"
