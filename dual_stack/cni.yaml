@@ -32,9 +32,7 @@ data:
           "ipam": {
               "type": "calico-ipam"
               "assign_ipv4": "true",
-              "assign_ipv6": "true",
-              "ipv4_pools": ["default-ipv4-ippool"],
-              "ipv6_pools": ["default-ipv6-ippool"]
+              "assign_ipv6": "true"
           },
           "container_settings": {
               "allow_ip_forwarding": true
