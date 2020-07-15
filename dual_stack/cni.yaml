@@ -29,10 +29,13 @@ data:
           "datastore_type": "kubernetes",
           "nodename": "__KUBERNETES_NODE_NAME__",
           "mtu": __CNI_MTU__,
+
           "ipam": {
-              "type": "calico-ipam"
+              "type": "calico-ipam",
               "assign_ipv4": "true",
-              "assign_ipv6": "true"
+              "assign_ipv6": "true",
+              "ipv4_pools": ["default-ipv4-ippool"],
+              "ipv6_pools": ["default-ipv6-ippool"]
           },
           "container_settings": {
               "allow_ip_forwarding": true
