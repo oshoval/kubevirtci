@@ -269,6 +269,30 @@ featureGates:
   IPv6DualStack: true
 EOF
 
+# audit log configuration
+mkdir /etc/kubernetes/audit
+
+audit_api_version="audit.k8s.io/v1"
+cat > /etc/kubernetes/audit/adv-audit.yaml <<EOF
+apiVersion: ${audit_api_version}
+kind: Policy
+rules:
+- level: Request
+  users: ["kubernetes-admin"]
+  resources:
+  - group: kubevirt.io
+    resources:
+    - virtualmachines
+    - virtualmachineinstances
+    - virtualmachineinstancereplicasets
+    - virtualmachineinstancepresets
+    - virtualmachineinstancemigrations
+  omitStages:
+  - RequestReceived
+  - ResponseStarted
+  - Panic
+EOF
+
 kubeadm init --config /etc/kubernetes/kubeadm.conf --experimental-kustomize /provision/kubeadm-patches/
 
 kubectl --kubeconfig=/etc/kubernetes/admin.conf patch deployment coredns -n kube-system -p "$(cat $kubeadmn_patches_path/add-security-context-deployment-patch.yaml)"
@@ -297,40 +321,7 @@ done
 
 kubectl --kubeconfig=/etc/kubernetes/admin.conf get pods -n kube-system
 
-reset_command="kubeadm reset"
-admission_flag="admission-control"
-# k8s 1.11 asks for confirmation on kubeadm reset, which can be suppressed by a new force flag
-reset_command="kubeadm reset --force"
-
-# k8s 1.11 uses new flags for admission plugins
-# old one is deprecated only, but can not be combined with new one, which is used in api server config created by kubeadm
-admission_flag="enable-admission-plugins"
-
-$reset_command
-
-# audit log configuration
-mkdir /etc/kubernetes/audit
-
-audit_api_version="audit.k8s.io/v1"
-cat > /etc/kubernetes/audit/adv-audit.yaml <<EOF
-apiVersion: ${audit_api_version}
-kind: Policy
-rules:
-- level: Request
-  users: ["kubernetes-admin"]
-  resources:
-  - group: kubevirt.io
-    resources:
-    - virtualmachines
-    - virtualmachineinstances
-    - virtualmachineinstancereplicasets
-    - virtualmachineinstancepresets
-    - virtualmachineinstancemigrations
-  omitStages:
-  - RequestReceived
-  - ResponseStarted
-  - Panic
-EOF
+kubeadm reset --force
 
 # Create local-volume directories
 for i in {1..10}
