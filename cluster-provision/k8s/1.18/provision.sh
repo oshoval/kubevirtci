@@ -235,7 +235,7 @@ rules:
 EOF
 
 cat > /etc/kubernetes/kubeadm.conf <<EOF
-apiVersion: kubeadm.k8s.io/v1beta1
+apiVersion: kubeadm.k8s.io/v1beta2
 bootstrapTokens:
 - groups:
   - system:bootstrappers:kubeadm:default-node-token
@@ -263,30 +263,29 @@ apiServer:
     mountPath: /var/log/k8s-audit
     name: audit-log
   timeoutForControlPlane: 4m0s
-featureGates:
-  IPv6DualStack: true
-apiVersion: kubeadm.k8s.io/v1beta1
+apiVersion: kubeadm.k8s.io/v1beta2
 certificatesDir: /etc/kubernetes/pki
 clusterName: kubernetes
-controlPlaneEndpoint: ""
 controllerManager:
   extraArgs:
+    cluster-cidr: 10.244.0.0/16,fd20:0:2::/64
     feature-gates: BlockVolume=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true,IPv6DualStack=true
-    cluster-cidr: "10.244.0.0/16,fd20:0:2::/64"
-    service-cluster-ip-range: "10.96.0.0/12,fd00:10:96::/112"
     node-cidr-mask-size-ipv4: "16"
     node-cidr-mask-size-ipv6: "64"
+    service-cluster-ip-range: 10.96.0.0/12,fd00:10:96::/112
 dns:
   type: CoreDNS
 etcd:
   local:
     dataDir: /var/lib/etcd
+featureGates:
+  IPv6DualStack: true
 imageRepository: k8s.gcr.io
 kind: ClusterConfiguration
-kubernetesVersion: ${version}
+kubernetesVersion: v${version}
 networking:
   dnsDomain: cluster.local
-  podSubnet: "10.244.0.0/16,fd20:0:2::/64"
+  podSubnet: 10.244.0.0/16,fd20:0:2::/64
   serviceSubnet: 10.96.0.0/12,fd00:10:96::/112
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
