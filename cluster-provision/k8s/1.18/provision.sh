@@ -158,8 +158,13 @@ echo "net.netfilter.nf_conntrack_max=1000000" >> /etc/sysctl.conf
 
 systemctl restart NetworkManager
 
-mkdir -p $kubeadmn_patches_path
+nmcli connection modify "System eth0" \
+   ipv6.method auto \
+   ipv6.addr-gen-mode eui64
 
+nmcli connection up "System eth0"
+
+mkdir -p $kubeadmn_patches_path
 cat >$kubeadmn_patches_path/kustomization.yaml <<EOF
 patchesJson6902:
 - target:
