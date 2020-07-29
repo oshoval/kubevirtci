@@ -1,5 +1,5 @@
---- cni.do-not-change.yaml	2020-07-29 13:53:48.000000000 +0300
-+++ cni_dual.yaml	2020-07-29 13:50:15.000000000 +0300
+--- cni.do-not-change.yaml	2020-07-29 14:21:58.000000000 +0300
++++ cni_dual.yaml	2020-07-29 15:24:11.000000000 +0300
 @@ -32,7 +32,14 @@
            "nodename": "__KUBERNETES_NODE_NAME__",
            "mtu": __CNI_MTU__,
@@ -16,33 +16,25 @@
            },
            "policy": {
                "type": "k8s"
-@@ -3576,17 +3583,21 @@
-             # The default IPv4 pool to create on startup if none exists. Pod IPs will be
-             # chosen from this range. Changing this value after installation will have
+@@ -3578,6 +3585,8 @@
              # no effect. This should fall within `--cluster-cidr`.
--            # - name: CALICO_IPV4POOL_CIDR
--            #   value: "192.168.0.0/16"
-+            - name: CALICO_IPV4POOL_CIDR
-+              value: "10.244.0.0/16"
-+            - name: CALICO_IPV6POOL_CIDR
-+              value: "fd20:0:2::/64"
+             # - name: CALICO_IPV4POOL_CIDR
+             #   value: "192.168.0.0/16"
 +            - name: IP6
 +              value: "autodetect"
              # Disable file logging so `kubectl logs` works.
              - name: CALICO_DISABLE_FILE_LOGGING
                value: "true"
-             # Set Felix endpoint to host default action to ACCEPT.
-             - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+@@ -3586,7 +3595,7 @@
                value: "ACCEPT"
--            # Disable IPv6 on Kubernetes.
-+            # Disable/Enable IPv6 on Kubernetes.
+             # Disable IPv6 on Kubernetes.
              - name: FELIX_IPV6SUPPORT
 -              value: "false"
 +              value: "true"
              # Set Felix logging to "info"
              - name: FELIX_LOGSEVERITYSCREEN
                value: "info"
-@@ -3709,6 +3720,9 @@
+@@ -3709,6 +3718,9 @@
            effect: NoSchedule
        serviceAccountName: calico-kube-controllers
        priorityClassName: system-cluster-critical
