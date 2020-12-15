@@ -345,6 +345,18 @@ wait_pods_ready
 deploy_sriov_operator
 wait_pods_ready
 
+cat <<EOF | _kubectl apply -f -
+apiVersion: v1
+data:
+  X557: 8086 1589 154c
+kind: ConfigMap
+metadata:
+  name: unsupported-nic-ids
+  namespace: sriov-network-operator
+EOF
+#sleep 60
+_kubectl get configmap -n sriov-network-operator unsupported-nic-ids -oyaml
+
 # We use just the first suitable pf, for the SriovNetworkNodePolicy manifest.
 # We also need the num of vfs because if we don't set this value equals to the total, in case of mellanox
 # the sriov operator will trigger a node reboot to update the firmware
