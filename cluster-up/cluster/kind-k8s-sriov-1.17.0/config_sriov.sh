@@ -158,9 +158,7 @@ function wait_allocatable_resource {
     set +e
     echo "ALL PODS"
     _kubectl get pods -A
-
-    # TODO, after we have logs, check if the reset patch is what cause it
-    # because clean bump worked
+    _kubectl get nodes
 
     echo "LOGS network-resources-injector"
     POD=$(_kubectl get pods -n sriov-network-operator | grep network-resources-injector | awk '{print $1}')
@@ -264,14 +262,15 @@ function apply_sriov_node_policy {
   echo "Applying SriovNetworkNodeConfigPolicy:"
   echo "$policy"
 
-  #if [ ! $RELEASE_VERSION = "4.4" ]; then
-  #  # See https://bugzilla.redhat.com/show_bug.cgi?id=1850505
-  #  echo "Disable operator webhook, else it would failed creating it because its not in the supported NIC list"
-  #  _kubectl patch sriovoperatorconfig default --type=merge -n sriov-network-operator --patch '{ "spec": { "enableOperatorWebhook": false } }'
-  #  timeout 100s bash -c "until ! $KUBECTL get validatingwebhookconfiguration -o custom-columns=:metadata.name | grep sriov-operator-webhook-config; do sleep 1; done"
-  #fi
-  #_kubectl create -f - <<< "$policy"
-  
+  if [ ! $RELEASE_VERSION = "4.4" ]; then
+    # See https://bugzilla.redhat.com/show_bug.cgi?id=1850505
+    echo "Disable operator webhook, else it would failed creating it because its not in the supported NIC list"
+    _kubectl patch sriovoperatorconfig default --type=merge -n sriov-network-operator --patch '{ "spec": { "enableOperatorWebhook": false } }'
+    timeout 100s bash -c "until ! $KUBECTL get validatingwebhookconfiguration -o custom-columns=:metadata.name | grep sriov-operator-webhook-config; do sleep 1; done"
+  fi
+  _kubectl create -f - <<< "$policy"
+  return 0
+
   # until https://github.com/k8snetworkplumbingwg/sriov-network-operator/issues/3 is fixed we need to inject CaBundle and retry policy creation
   tries=0
   until _kubectl create -f - <<< "$policy"; do
@@ -281,6 +280,7 @@ function apply_sriov_node_policy {
       set +e
       echo "ALL PODS"
       _kubectl get pods -A
+      _kubectl get nodes
 
       echo "LOGS network-resources-injector"
       POD=$(_kubectl get pods -n sriov-network-operator | grep network-resources-injector | awk '{print $1}')
