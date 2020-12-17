@@ -217,7 +217,9 @@ function deploy_sriov_operator {
   pushd $operator_path
     export SKIP_VAR_SET=1
     export CGO_ENABLED=0
-    export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/openshift/origin-sriov-network-config-daemon:${RELEASE_VERSION}
+    #export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/openshift/origin-sriov-network-config-daemon:${RELEASE_VERSION}
+    #export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/oshoval/origin-sriov-network-config-daemon:${RELEASE_VERSION}
+    export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/oshoval/origin-sriov-network-config-daemon:x557_v3
     export SRIOV_NETWORK_WEBHOOK_IMAGE=quay.io/openshift/origin-sriov-network-webhook:${RELEASE_VERSION}
     export NETWORK_RESOURCES_INJECTOR_IMAGE=quay.io/openshift/origin-sriov-dp-admission-controller:${RELEASE_VERSION}
     export SRIOV_CNI_IMAGE=quay.io/openshift/origin-sriov-cni:${RELEASE_VERSION}
@@ -262,14 +264,14 @@ function apply_sriov_node_policy {
   echo "Applying SriovNetworkNodeConfigPolicy:"
   echo "$policy"
 
-  if [ ! $RELEASE_VERSION = "4.4" ]; then
-    # See https://bugzilla.redhat.com/show_bug.cgi?id=1850505
-    echo "Disable operator webhook, else it would failed creating it because its not in the supported NIC list"
-    _kubectl patch sriovoperatorconfig default --type=merge -n sriov-network-operator --patch '{ "spec": { "enableOperatorWebhook": false } }'
-    timeout 100s bash -c "until ! $KUBECTL get validatingwebhookconfiguration -o custom-columns=:metadata.name | grep sriov-operator-webhook-config; do sleep 1; done"
-  fi
-  _kubectl create -f - <<< "$policy"
-  return 0
+  #if [ ! $RELEASE_VERSION = "4.4" ]; then
+  #  # See https://bugzilla.redhat.com/show_bug.cgi?id=1850505
+  #  echo "Disable operator webhook, else it would failed creating it because its not in the supported NIC list"
+  #  _kubectl patch sriovoperatorconfig default --type=merge -n sriov-network-operator --patch '{ "spec": { "enableOperatorWebhook": false } }'
+  #  timeout 100s bash -c "until ! $KUBECTL get validatingwebhookconfiguration -o custom-columns=:metadata.name | grep sriov-operator-webhook-config; do sleep 1; done"
+  #fi
+  #_kubectl create -f - <<< "$policy"
+  #return 0
 
   # until https://github.com/k8snetworkplumbingwg/sriov-network-operator/issues/3 is fixed we need to inject CaBundle and retry policy creation
   tries=0
