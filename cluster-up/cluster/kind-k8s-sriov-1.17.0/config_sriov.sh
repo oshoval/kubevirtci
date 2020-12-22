@@ -219,7 +219,7 @@ function deploy_sriov_operator {
     export CGO_ENABLED=0
     #export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/openshift/origin-sriov-network-config-daemon:${RELEASE_VERSION}
     #export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/oshoval/origin-sriov-network-config-daemon:${RELEASE_VERSION}
-    export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/oshoval/origin-sriov-network-config-daemon:x557_v3
+    export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/oshoval/origin-sriov-network-config-daemon:x557_reset
     export SRIOV_NETWORK_WEBHOOK_IMAGE=quay.io/openshift/origin-sriov-network-webhook:${RELEASE_VERSION}
     export NETWORK_RESOURCES_INJECTOR_IMAGE=quay.io/openshift/origin-sriov-dp-admission-controller:${RELEASE_VERSION}
     export SRIOV_CNI_IMAGE=quay.io/openshift/origin-sriov-cni:${RELEASE_VERSION}
@@ -348,17 +348,21 @@ function move_sriov_pfs_netns_to_node {
     # The first will manage to assign the PF to its container, and the 2nd will just skip it
     # and try the rest of the PFs available.
     if ip link set "$ifs_name" netns "$node"; then
-      if timeout 5s bash -c "until docker exec $node ip address | grep -w $ifs_name; do sleep 1; done"; then
+      if timeout 5s bash -c "until docker exec $node ip address | grep -qw $ifs_name; do sleep 1; done"; then
         pf_array+=($ifs_name)
         
         PF_COUNTER=$((PF_COUNTER+1))
         if [[ $PF_COUNTER -eq $NUM_PF_REQUIRED ]]; then
-          echo "Allocated requested number of PFs"
           break
         fi
       fi
     fi
   done
+
+  if [[ $PF_COUNTER -lt $NUM_PF_REQUIRED ]]; then
+    echo "FATAL: Could not allocate enough PFs, please check PF_BLACKLIST, NUM_PF_REQUIRED, and how many PF actually available or used already"
+    exit 1
+  fi
 
   echo ${pf_array[@]}
 }
@@ -379,9 +383,7 @@ fi
 
 NODE_PFS=($(move_sriov_pfs_netns_to_node $SRIOV_NODE))
 
-setns_sriov_ifs
-
-lspci -i $NODE_PF -vvvv
+#lspci -i $NODE_PF -vvvv
 
 SRIOV_NODE_CMD="docker exec -it -d ${SRIOV_NODE}"
 ${SRIOV_NODE_CMD} mount -o remount,rw /sys     # kind remounts it as readonly when it starts, we need it to be writeable
