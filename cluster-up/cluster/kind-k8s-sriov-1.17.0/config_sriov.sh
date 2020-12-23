@@ -154,37 +154,6 @@ function wait_allocatable_resource {
 
   if ! retry $tries $wait_time "$action" "$wait_message"; then
     echo $error_message
-
-    set +e
-    echo "ALL PODS"
-    _kubectl get pods -A
-    _kubectl get nodes
-
-    echo "LOGS network-resources-injector"
-    POD=$(_kubectl get pods -n sriov-network-operator | grep network-resources-injector | awk '{print $1}')
-    _kubectl logs -n sriov-network-operator $POD
-
-    echo "LOGS operator-webhook"
-    POD=$(_kubectl get pods -n sriov-network-operator | grep operator-webhook | awk '{print $1}')
-    _kubectl logs -n sriov-network-operator $POD
-
-    echo "LOGS sriov-cni"
-    POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-cni | awk '{print $1}')
-    _kubectl logs -n sriov-network-operator $POD
-
-    echo "LOGS sriov-device-plugin"
-    POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-device-plugin | awk '{print $1}')
-    _kubectl logs -n sriov-network-operator $POD
-
-    echo "LOGS sriov-network-config-daemon"
-    POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-network-config-daemon | awk '{print $1}')
-    _kubectl logs -n sriov-network-operator $POD
-
-    echo "LOGS sriov-network-operator"
-    POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-network-operator | awk '{print $1}')
-    _kubectl logs -n sriov-network-operator $POD
-    set -e
-
     return 1
   fi
 
@@ -218,7 +187,7 @@ function deploy_sriov_operator {
     export SKIP_VAR_SET=1
     export CGO_ENABLED=0
     #export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/openshift/origin-sriov-network-config-daemon:${RELEASE_VERSION}
-    #export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/oshoval/origin-sriov-network-config-daemon:${RELEASE_VERSION}
+    # Fixes for unsupported nics, and cross communication of the two clusters (working on official PRs to fix those)
     export SRIOV_NETWORK_CONFIG_DAEMON_IMAGE=quay.io/oshoval/origin-sriov-network-config-daemon:x557_reset
     export SRIOV_NETWORK_WEBHOOK_IMAGE=quay.io/openshift/origin-sriov-network-webhook:${RELEASE_VERSION}
     export NETWORK_RESOURCES_INJECTOR_IMAGE=quay.io/openshift/origin-sriov-dp-admission-controller:${RELEASE_VERSION}
@@ -264,52 +233,13 @@ function apply_sriov_node_policy {
   echo "Applying SriovNetworkNodeConfigPolicy:"
   echo "$policy"
 
-  #if [ ! $RELEASE_VERSION = "4.4" ]; then
-  #  # See https://bugzilla.redhat.com/show_bug.cgi?id=1850505
-  #  echo "Disable operator webhook, else it would failed creating it because its not in the supported NIC list"
-  #  _kubectl patch sriovoperatorconfig default --type=merge -n sriov-network-operator --patch '{ "spec": { "enableOperatorWebhook": false } }'
-  #  timeout 100s bash -c "until ! $KUBECTL get validatingwebhookconfiguration -o custom-columns=:metadata.name | grep sriov-operator-webhook-config; do sleep 1; done"
-  #fi
-  #_kubectl create -f - <<< "$policy"
-  #return 0
-
+  set +x
+  trap "set -x" RETURN
   # until https://github.com/k8snetworkplumbingwg/sriov-network-operator/issues/3 is fixed we need to inject CaBundle and retry policy creation
   tries=0
   until _kubectl create -f - <<< "$policy"; do
     if [ $tries -eq 10 ]; then
       echo "could not create policy"
-      
-      set +e
-      echo "ALL PODS"
-      _kubectl get pods -A
-      _kubectl get nodes
-
-      echo "LOGS network-resources-injector"
-      POD=$(_kubectl get pods -n sriov-network-operator | grep network-resources-injector | awk '{print $1}')
-      _kubectl logs -n sriov-network-operator $POD
-
-      echo "LOGS operator-webhook"
-      POD=$(_kubectl get pods -n sriov-network-operator | grep operator-webhook | awk '{print $1}')
-      _kubectl logs -n sriov-network-operator $POD
-
-      echo "LOGS sriov-cni"
-      POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-cni | awk '{print $1}')
-      _kubectl logs -n sriov-network-operator $POD
-
-      echo "LOGS sriov-device-plugin"
-      POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-device-plugin | awk '{print $1}')
-      _kubectl logs -n sriov-network-operator $POD
-
-      echo "LOGS sriov-network-config-daemon"
-      POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-network-config-daemon | awk '{print $1}')
-      _kubectl logs -n sriov-network-operator $POD
-
-      echo "LOGS sriov-network-operator"
-      POD=$(_kubectl get pods -n sriov-network-operator | grep sriov-network-operator | awk '{print $1}')
-      _kubectl logs -n sriov-network-operator $POD
-      
-      set -e
-
       return 1
     fi
     _kubectl patch validatingwebhookconfiguration sriov-operator-webhook-config --patch '{"webhooks":[{"name":"operator-webhook.sriovnetwork.openshift.io", "clientConfig": { "caBundle": "'"$(cat $CERTCREATOR_PATH/operator-webhook.cert)"'" }}]}'
@@ -382,8 +312,6 @@ if [[ "$SRIOV_NODE" == "${WORKER_NODE_ROOT}0" ]]; then
 fi
 
 NODE_PFS=($(move_sriov_pfs_netns_to_node $SRIOV_NODE))
-
-#lspci -i $NODE_PF -vvvv
 
 SRIOV_NODE_CMD="docker exec -it -d ${SRIOV_NODE}"
 ${SRIOV_NODE_CMD} mount -o remount,rw /sys     # kind remounts it as readonly when it starts, we need it to be writeable
