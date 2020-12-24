@@ -9,9 +9,15 @@ KUBECONFIG_PATH="${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig"
 
 MASTER_NODE="${CLUSTER_NAME}-control-plane"
 WORKER_NODE_ROOT="${CLUSTER_NAME}-worker"
+PFS_COUNT_PER_NODE=${PFS_COUNT_PER_NODE:-1}
 
 OPERATOR_GIT_HASH=8d3c30de8ec5a9a0c9eeb84ea0aa16ba2395cd68  # release-4.4
 SRIOV_OPERATOR_NAMESPACE="sriov-network-operator"
+
+if [ $PFS_COUNT_PER_NODE -le 0 ]; then
+  echo "FATAL: Wrong value of PFS_COUNT_PER_NODE, must be a positive integer, less or equal to the actual number of PFs available"
+  exit 1
+fi
 
 # This function gets a command and invoke it repeatedly
 # until the command return code is zero
@@ -219,6 +225,7 @@ function apply_sriov_node_policy {
 
 function move_sriov_pfs_netns_to_node {
   local -r node=$1
+  local -r num_pfs_required=$2
   local -r pid="$(docker inspect -f '{{.State.Pid}}' $node)"
   local pf_array=()
 
@@ -241,7 +248,15 @@ function move_sriov_pfs_netns_to_node {
 
     ip link set "$pf_name" netns "$node"
     pf_array+=("$pf_name")
+    if [ "${#pf_array[@]}" -eq "$num_pfs_required" ]; then
+      break
+    fi
   done
+
+  if [ "${#pf_array[@]}" -lt "$num_pfs_required" ]; then
+    echo "FATAL: Could not allocate enough PFs, please check PF_BLACKLIST, PFS_COUNT_PER_NODE, and how many PF actually available or used already"
+    exit 1
+  fi
 
   echo "${pf_array[@]}"
 }
@@ -260,7 +275,7 @@ if [[ "$SRIOV_NODE" == "${WORKER_NODE_ROOT}0" ]]; then
   SRIOV_NODE=${WORKER_NODE_ROOT}
 fi
 
-NODE_PFS=($(move_sriov_pfs_netns_to_node $SRIOV_NODE))
+NODE_PFS=($(move_sriov_pfs_netns_to_node "$SRIOV_NODE" "$PFS_COUNT_PER_NODE"))
 
 SRIOV_NODE_CMD="docker exec -it -d ${SRIOV_NODE}"
 ${SRIOV_NODE_CMD} mount -o remount,rw /sys     # kind remounts it as readonly when it starts, we need it to be writeable
