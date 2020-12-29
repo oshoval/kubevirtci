@@ -231,19 +231,19 @@ function move_sriov_pfs_netns_to_node {
     exit 1
   fi
 
-  for ifs in "${sriov_pfs[@]}"; do
-    local ifs_name="${ifs%%/device/*}"
-    ifs_name="${ifs_name##*/}"
+  for pf in "${sriov_pfs[@]}"; do
+    local pf_name="${pf%%/device/*}"
+    pf_name="${pf_name##*/}"
 
-    if [ $(echo "${PF_BLACKLIST[@]}" | grep "${ifs_name}") ]; then
+    if [ $(echo "${PF_BLACKLIST[@]}" | grep "${pf_name}") ]; then
       continue
     fi
 
-    ip link set "$ifs_name" netns "$node"
-    pf_array+=($ifs_name)
+    ip link set "$pf_name" netns "$node"
+    pf_array+=("$pf_name")
   done
 
-  echo ${pf_array[@]}
+  echo "${pf_array[@]}"
 }
 
 # The first worker needs to be handled specially as it has no ending number, and sort will not work
