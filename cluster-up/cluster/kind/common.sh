@@ -34,11 +34,13 @@ function _wait_containers_ready {
 }
 
 function _fetch_kind() {
-    if [ ! -f ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kind ]; then
-        curl -LSs  https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-linux-amd64 -o ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kind
-        chmod +x ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kind
+    KIND="${KUBEVIRTCI_CONFIG_PATH}"/"$KUBEVIRT_PROVIDER"/.kind
+    current_kind_version=$($KIND --version |& awk '{print $3}')
+    if [[ $current_kind_version != $KIND_VERSION ]]; then
+        echo "Downloading kind v$KIND_VERSION"
+        curl -LSs https://github.com/kubernetes-sigs/kind/releases/download/v$KIND_VERSION/kind-linux-amd64 -o "$KIND"
+        chmod +x "$KIND"
     fi
-    KIND=${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kind
 }
 
 function _configure-insecure-registry-and-reload() {
@@ -154,7 +156,7 @@ function setup_kind() {
     $KIND --loglevel debug create cluster --retain --name=${CLUSTER_NAME} --config=${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/kind.yaml --image=$KIND_NODE_IMAGE
     $KIND get kubeconfig --name=${CLUSTER_NAME} > ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig
 
-    docker cp ${CLUSTER_NAME}-control-plane:/kind/bin/kubectl ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubectl
+    docker cp ${CLUSTER_NAME}-control-plane:$KUBECTL_PATH ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubectl
     chmod u+x ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubectl
 
     if [ $KUBEVIRT_WITH_KIND_ETCD_IN_MEMORY == "true" ]; then

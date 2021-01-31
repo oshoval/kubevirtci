@@ -3,9 +3,24 @@
 set -e
 
 export CLUSTER_NAME="sriov"
-export KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.17.0}"
+export K8S_VERSION="${K8S_VERSION:-1.17.0}"
 
-source ${KUBEVIRTCI_PATH}/cluster/kind/common.sh
+function set_kind_params() {
+    local k8s_version=$1
+    
+    if [ "$k8s_version" == "1.17.0" ]; then
+        export KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.17.0}"
+        export KIND_VERSION="${KIND_VERSION:-0.7.0}"
+        export KUBECTL_PATH="${KUBECTL_PATH:-/kind/bin/kubectl}"
+    elif [ "$k8s_version" == "1.19.1" ]; then
+        export KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.19.1@sha256:98cf5288864662e37115e362b23e4369c8c4a408f99cbc06e58ac30ddc721600}"
+        export KIND_VERSION="${KIND_VERSION:-0.9.0}"
+        export KUBECTL_PATH="${KUBECTL_PATH:-/usr/bin/kubectl}"
+    else 
+        echo "Unsupported k8s version $k8s_version"
+        exit 1
+    fi
+}
 
 function up() {
     if [[ "$KUBEVIRT_NUM_NODES" -ne 2 ]]; then
@@ -27,3 +42,7 @@ function up() {
 
     ${KUBEVIRTCI_PATH}/cluster/$KUBEVIRT_PROVIDER/config_sriov.sh
 }
+
+set_kind_params "$K8S_VERSION"
+
+source ${KUBEVIRTCI_PATH}/cluster/kind/common.sh
