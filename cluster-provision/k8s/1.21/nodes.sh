@@ -61,7 +61,7 @@ if [[ $kubelet_rc -ne 0 ]]; then
     service kubelet restart
 fi
 
-kubeadm join --token abcdef.1234567890123456 192.168.66.101:6443 --ignore-preflight-errors=all --discovery-token-unsafe-skip-ca-verification=true
+kubeadm join --token abcdef.1234567890123456 [fd00::101]:6443 --ignore-preflight-errors=all --discovery-token-unsafe-skip-ca-verification=true
 
 # ceph mon permission
 mkdir -p /var/lib/rook
