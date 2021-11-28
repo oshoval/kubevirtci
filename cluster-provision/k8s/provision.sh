@@ -15,4 +15,4 @@ export KUBEVIRT_CGROUPV2="${CGROUPV2}"
 (cd ../${base} && ./build.sh)
 make -C ../gocli cli
 ../gocli/build/cli provision ${provision_dir}
-./check-cluster-up.sh ${provision_dir}
+#./check-cluster-up.sh ${provision_dir}
