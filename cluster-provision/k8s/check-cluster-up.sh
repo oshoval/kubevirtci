@@ -29,13 +29,13 @@ export KUBEVIRTCI_GOCLI_CONTAINER=quay.io/kubevirtci/gocli:latest
     export KUBEVIRT_NUM_NODES=2
     export KUBEVIRT_NUM_SECONDARY_NICS=2
     export KUBEVIRT_WITH_CNAO=true
-    export KUBEVIRT_DEPLOY_ISTIO=true
+    #export KUBEVIRT_DEPLOY_ISTIO=true
     if [[ $KUBEVIRT_PROVIDER =~ k8s-1\.1.* ]]; then
         export KUBEVIRT_DEPLOY_ISTIO=false
     fi
-    export KUBEVIRT_DEPLOY_PROMETHEUS=true
-    export KUBEVIRT_DEPLOY_PROMETHEUS_ALERTMANAGER=true
-    export KUBEVIRT_DEPLOY_GRAFANA=true
+    #export KUBEVIRT_DEPLOY_PROMETHEUS=true
+    #export KUBEVIRT_DEPLOY_PROMETHEUS_ALERTMANAGER=true
+    #export KUBEVIRT_DEPLOY_GRAFANA=true
     if [[ ($KUBEVIRT_PROVIDER =~ k8s-1\.1.*) || ($KUBEVIRT_PROVIDER =~ k8s-1.20) ]]; then
         export KUBEVIRT_DEPLOY_PROMETHEUS=false
         export KUBEVIRT_DEPLOY_PROMETHEUS_ALERTMANAGER=false
@@ -58,12 +58,12 @@ export KUBEVIRTCI_GOCLI_CONTAINER=quay.io/kubevirtci/gocli:latest
     ${ssh} node02 -- ip l show eth1
     ${ssh} node02 -- ip l show eth2
 
-    pre_pull_image_file="$DIR/${provision_dir}/extra-pre-pull-images"
-    if [ -f "${pre_pull_image_file}" ]; then
-        bash -x "$DIR/deploy-manifests.sh" "${provision_dir}"
-        bash -x "$DIR/check-pod-images.sh" "${provision_dir}"
-        bash -x "$DIR/validate-pod-pull-policies.sh"
-    fi
+    #pre_pull_image_file="$DIR/${provision_dir}/extra-pre-pull-images"
+    #if [ -f "${pre_pull_image_file}" ]; then
+    #    bash -x "$DIR/deploy-manifests.sh" "${provision_dir}"
+    #    bash -x "$DIR/check-pod-images.sh" "${provision_dir}"
+    #    bash -x "$DIR/validate-pod-pull-policies.sh"
+    #fi
 
     # Run conformance test only at CI and if the provider has them activated
     conformance_config=$DIR/${provision_dir}/conformance.json
