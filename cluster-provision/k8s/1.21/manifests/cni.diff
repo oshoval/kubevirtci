@@ -1,5 +1,5 @@
---- cni.do-not-change.yaml	2021-11-28 10:37:52.000000000 +0200
-+++ cni.yaml	2021-11-28 10:38:01.000000000 +0200
+--- ./cni.do-not-change.yaml	2021-11-29 17:48:48.000000000 +0200
++++ input.yaml	2021-11-29 17:51:08.000000000 +0200
 @@ -32,7 +32,12 @@
            "nodename": "__KUBERNETES_NODE_NAME__",
            "mtu": __CNI_MTU__,
@@ -68,7 +68,7 @@
              # Disable file logging so `kubectl logs` works.
              - name: CALICO_DISABLE_FILE_LOGGING
                value: "true"
-@@ -3679,12 +3686,16 @@
+@@ -3679,12 +3686,20 @@
                value: "ACCEPT"
              # Disable IPv6 on Kubernetes.
              - name: FELIX_IPV6SUPPORT
@@ -83,10 +83,14 @@
 +              value: "true"
 +            - name: CALICO_ROUTER_ID
 +              value: "hash"
++            - name: CALICO_IPV6POOL_CIDR
++              value: "fd10:244::/64"
++            - name: CALICO_IPV6POOL_BLOCK_SIZE
++              value: "120"
            securityContext:
              privileged: true
            resources:
-@@ -3820,9 +3831,12 @@
+@@ -3820,9 +3835,12 @@
            effect: NoSchedule
        serviceAccountName: calico-kube-controllers
        priorityClassName: system-cluster-critical
