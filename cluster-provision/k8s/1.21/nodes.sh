@@ -48,7 +48,7 @@ KUBELET_EXTRA_ARGS=${KUBELET_CGROUP_ARGS} --node-ip=:: --feature-gates=${KUBELET
 EOT
 else
     cat <<EOT >>/etc/systemd/system/kubelet.service.d/09-kubeadm.conf
-Environment="KUBELET_CPUMANAGER_ARGS=--feature-gates=CPUManager=true,IPv6DualStack=true --node-ip=:: --cpu-manager-policy=static --kube-reserved=cpu=500m --system-reserved=cpu=500m"
+Environment="KUBELET_CPUMANAGER_ARGS=--feature-gates=CPUManager=true,IPv6DualStack=false --node-ip=:: --cpu-manager-policy=static --kube-reserved=cpu=500m --system-reserved=cpu=500m"
 EOT
 sed -i 's/$KUBELET_EXTRA_ARGS/$KUBELET_EXTRA_ARGS $KUBELET_CPUMANAGER_ARGS/' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 fi
