@@ -87,10 +87,10 @@
 +              value: "true"
 +            - name: CALICO_ROUTER_ID
 +              value: "hash"
-+            #- name: CALICO_IPV6POOL_CIDR
-+            #  value: "fd00:10:244::/104"
-+            #- name: CALICO_IPV6POOL_BLOCK_SIZE
-+            #  value: "120"
++            - name: CALICO_IPV6POOL_CIDR
++              value: "fd00:10:244::/104"
++            - name: CALICO_IPV6POOL_BLOCK_SIZE
++              value: "120"
            securityContext:
              privileged: true
            resources:

@@ -266,6 +266,8 @@ EOF
 kubeadm_manifest="/etc/kubernetes/kubeadm.conf"
 envsubst < /tmp/kubeadm.conf > $kubeadm_manifest
 
+kubeadm config images pull
+
 echo "RUN kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/"
 echo "kubeadmn_patches_path $kubeadmn_patches_path"
 echo "cni_manifest $cni_manifest"
