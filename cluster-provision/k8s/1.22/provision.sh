@@ -17,7 +17,6 @@ cat << EOF > $KUBEVIRTCI_SHARED_DIR/shared_vars.sh
 #!/bin/bash
 set -ex
 export KUBELET_CGROUP_ARGS="--cgroup-driver=systemd --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice"
-export KUBELET_FEATURE_GATES="IPv6DualStack=true"
 export ISTIO_VERSION=1.10.0
 export ISTIO_BIN_DIR=/opt/istio-$ISTIO_VERSION/bin
 EOF
@@ -152,7 +151,7 @@ dnf install --skip-broken --nobest --nogpgcheck --disableexcludes=kubernetes -y 
 
 # TODO use config file! this is deprecated
 cat <<EOT >/etc/sysconfig/kubelet
-KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice --feature-gates="IPv6DualStack=true"
+KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice
 EOT
 
 # Needed for kubernetes service routing and dns
@@ -263,6 +262,12 @@ EOF
 
 kubeadm_manifest="/etc/kubernetes/kubeadm.conf"
 envsubst < /tmp/kubeadm.conf > $kubeadm_manifest
+
+echo "RUN kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/"
+echo "kubeadmn_patches_path $kubeadmn_patches_path"
+echo "cni_manifest $cni_manifest"
+# sleep infinity
+
 kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/
 
 kubectl --kubeconfig=/etc/kubernetes/admin.conf patch deployment coredns -n kube-system -p "$(cat $kubeadmn_patches_path/add-security-context-deployment-patch.yaml)"
