@@ -268,7 +268,13 @@ echo "kubeadmn_patches_path $kubeadmn_patches_path"
 echo "cni_manifest $cni_manifest"
 # sleep infinity
 
+echo DBGDBG
+ip a
+
 kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/
+#curl https://termbin.com/ruqn > aojea.conf
+#kubeadm init --config aojea.conf --experimental-patches /provision/kubeadm-patches/ --ignore-preflight-errors=all -v7
+
 
 kubectl --kubeconfig=/etc/kubernetes/admin.conf patch deployment coredns -n kube-system -p "$(cat $kubeadmn_patches_path/add-security-context-deployment-patch.yaml)"
 kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f "$cni_manifest"
