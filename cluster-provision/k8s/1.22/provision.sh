@@ -166,6 +166,9 @@ net.ipv6.conf.all.disable_ipv6 = 0
 net.ipv6.conf.all.forwarding = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
+
+# net.ipv6.conf.all.accept_ra = 1
+
 sysctl --system
 
 echo bridge >> /etc/modules-load.d/k8s.conf
@@ -266,10 +269,18 @@ envsubst < /tmp/kubeadm.conf > $kubeadm_manifest
 echo "RUN kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/"
 echo "kubeadmn_patches_path $kubeadmn_patches_path"
 echo "cni_manifest $cni_manifest"
-# sleep infinity
+sleep infinity
 
-echo DBGDBG
-ip a
+#echo DBGDBG
+#ip -6 r
+#sudo ip -6 route add default via fd00::1 src fd00::101 || true
+#ip -6 r
+
+#ip a
+#ping -6 fd00::101 || true
+#ip a
+#ping -6 fd00::1 || true
+#ip a
 
 kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/
 #curl https://termbin.com/ruqn > aojea.conf
