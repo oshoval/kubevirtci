@@ -306,14 +306,14 @@ chmod -R 777 /var/local/kubevirt-storage/local-volume
 chcon -R unconfined_u:object_r:svirt_sandbox_file_t:s0 /mnt/local-storage/
 
 # Pre pull all images from the manifests
-for image in $(/tmp/fetch-images.sh /tmp); do
-    pull_container_retry "${image}"
-done
+#for image in $(/tmp/fetch-images.sh /tmp); do
+#    pull_container_retry "${image}"
+#done
 
 # Pre pull additional images from list
-for image in $(cat "/tmp/extra-pre-pull-images"); do
-    pull_container_retry "${image}"
-done
+#for image in $(cat "/tmp/extra-pre-pull-images"); do
+#    pull_container_retry "${image}"
+#done
 
 # copy network addons operator manifests
 # so we can use them at cluster-up
