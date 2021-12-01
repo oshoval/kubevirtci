@@ -41,6 +41,13 @@ do
     sleep 2
 done
 
+until ip address | grep fd00::101/128; do sleep 1; done
+
+# cant delete before we fix the management
+# ip addr del 192.168.66.101/24 dev eth0
+# echo 0 > /proc/sys/net/ipv4/conf/all/forwarding
+# and then need to add  -ignore-preflight-errors=FileContent--proc-sys-net-ipv4-ip_forward
+
 kubeadm init --config /etc/kubernetes/kubeadm.conf --experimental-patches /provision/kubeadm-patches/
 
 kubectl --kubeconfig=/etc/kubernetes/admin.conf patch deployment coredns -n kube-system -p "$(cat /provision/kubeadm-patches/add-security-context-deployment-patch.yaml)"

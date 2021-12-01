@@ -117,7 +117,7 @@ dnf install -y podman
 
 # link docker to podman as we need docker in test repos to pre-pull images
 # don't break them by doing a symlink
-ln -s /usr/bin/podman /usr/bin/docker
+ln -s /usr/bin/podman /usr/bin/docker || true
 
 cat << EOF > /etc/containers/registries.conf
 [registries.search]
@@ -266,12 +266,35 @@ EOF
 kubeadm_manifest="/etc/kubernetes/kubeadm.conf"
 envsubst < /tmp/kubeadm.conf > $kubeadm_manifest
 
-kubeadm config images pull
+#kubeadm config images pull
 
-echo "RUN kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/"
-echo "kubeadmn_patches_path $kubeadmn_patches_path"
-echo "cni_manifest $cni_manifest"
-sleep infinity
+cat <<EOT > /etc/cni/net.d/10-bridge-v6.conf
+{
+  "cniVersion": "0.3.0",
+  "name": "mynet",
+  "type": "bridge",
+  "bridge": "cbr0",
+  "isDefaultGateway": true,
+  "ipMasq": true,
+  "hairpinMode": true,
+  "ipam": {
+    "type": "host-local",
+    "ranges": [
+      [
+        {
+          "subnet": "fd00:101::/64",
+          "gateway": "fd00:101::1"
+        }
+      ]
+    ]
+  }
+}
+EOT
+
+#echo "RUN kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/"
+#echo "kubeadmn_patches_path $kubeadmn_patches_path"
+#echo "cni_manifest $cni_manifest"
+#sleep infinity
 
 #echo DBGDBG
 #ip -6 r
@@ -283,6 +306,9 @@ sleep infinity
 #ip a
 #ping -6 fd00::1 || true
 #ip a
+
+echo "waiting for ip"
+until ip address | grep fd00::101/128; do sleep 1; done
 
 kubeadm init --config $kubeadm_manifest --experimental-patches /provision/kubeadm-patches/
 #curl https://termbin.com/ruqn > aojea.conf

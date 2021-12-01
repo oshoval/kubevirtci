@@ -61,6 +61,14 @@ if [[ $kubelet_rc -ne 0 ]]; then
     service kubelet restart
 fi
 
+# TODO make generic
+until ip address | grep fd00::102/128; do sleep 1; done
+# do we need to change the bridge? (if so need to be dynamic), seems to work without changing it
+
+# TODO make generic, once fixing the management
+#ip addr del 192.168.66.102/24 dev eth0
+#echo 0 > /proc/sys/net/ipv4/conf/all/forwarding
+
 kubeadm join --token abcdef.1234567890123456 [fd00::101]:6443 --ignore-preflight-errors=all --discovery-token-unsafe-skip-ca-verification=true
 
 # ceph mon permission

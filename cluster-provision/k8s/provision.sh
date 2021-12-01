@@ -12,7 +12,8 @@ cd $DIR
 
 export KUBEVIRT_CGROUPV2="${CGROUPV2}"
 
-(cd ../${base} && ./build.sh)
+#(cd ../${base} && ./build.sh)
+docker tag mycentos:latest quay.io/kubevirtci/centos8:latest
 make -C ../gocli cli
 ../gocli/build/cli provision ${provision_dir}
 #./check-cluster-up.sh ${provision_dir}
