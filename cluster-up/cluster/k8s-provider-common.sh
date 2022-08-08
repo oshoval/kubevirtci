@@ -92,6 +92,7 @@ function deploy_cdi() {
     if [ "$KUBEVIRT_DEPLOY_CDI" == "true" ]; then
         $kubectl create -f /opt/cdi-*-operator.yaml
         $kubectl create -f /opt/cdi-*-cr.yaml
+        $kubectl create -f /provision/local-volume.yaml
     fi
 }
 
