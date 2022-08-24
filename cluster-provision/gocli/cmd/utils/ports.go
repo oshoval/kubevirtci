@@ -32,6 +32,8 @@ const (
 	PortGrafana = 30008
 	//PortUploadProxy contains CDI UploadProxy port
 	PortUploadProxy = 31001
+	//PortDNS bla bla
+	PortDNS = 53
 
 	// PortNameSSH contains control-plane node SSH port name
 	PortNameSSH = "ssh"
@@ -58,6 +60,8 @@ const (
 	PortNameGrafana = "grafana"
 	// PortNameUploadProxy contains CDI UploadProxy port
 	PortNameUploadProxy = "uploadproxy"
+	// PortNameDNS bla bla
+	PortNameDNS = "dns"
 )
 
 // GetPublicPort returns public port by private port

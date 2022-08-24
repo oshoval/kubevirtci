@@ -89,6 +89,7 @@ func NewRunCommand() *cobra.Command {
 	run.Flags().Uint("ssh-port", 0, "port on localhost for ssh server")
 	run.Flags().Uint("prometheus-port", 0, "port on localhost for prometheus server")
 	run.Flags().Uint("grafana-port", 0, "port on localhost for grafana server")
+	run.Flags().Uint("dns-port", 0, "port on localhost for dns server")
 	run.Flags().String("nfs-data", "", "path to data which should be exposed via nfs to the nodes")
 	run.Flags().Bool("enable-ceph", false, "enables dynamic storage provisioning using Ceph")
 	run.Flags().Bool("enable-istio", false, "deploys Istio service mesh")
@@ -154,6 +155,7 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 	utils.AppendIfExplicit(portMap, utils.PortRegistry, cmd.Flags(), "registry-port")
 	utils.AppendIfExplicit(portMap, utils.PortPrometheus, cmd.Flags(), "prometheus-port")
 	utils.AppendIfExplicit(portMap, utils.PortGrafana, cmd.Flags(), "grafana-port")
+	utils.AppendIfExplicit(portMap, utils.PortDNS, cmd.Flags(), "dns-port")
 
 	qemuArgs, err := cmd.Flags().GetString("qemu-args")
 	if err != nil {
