@@ -33,7 +33,7 @@ const (
 	//PortUploadProxy contains CDI UploadProxy port
 	PortUploadProxy = 31001
 	//PortDNS bla bla
-	PortDNS = 53
+	PortDNS = 31111
 
 	// PortNameSSH contains control-plane node SSH port name
 	PortNameSSH = "ssh"
@@ -93,9 +93,18 @@ func PrintPublicPort(port uint16, ports nat.PortMap) error {
 	return nil
 }
 
-// TCPPortOrDie returns net.Port object or panic if cast failed
+// TCPPortOrDie returns net.Port TCP object or panic if cast failed
 func TCPPortOrDie(port int) nat.Port {
 	p, err := nat.NewPort("tcp", strconv.Itoa(port))
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
+// UDPPortOrDie returns net.Port UDP object or panic if cast failed
+func UDPPortOrDie(port int) nat.Port {
+	p, err := nat.NewPort("udp", strconv.Itoa(port))
 	if err != nil {
 		panic(err)
 	}

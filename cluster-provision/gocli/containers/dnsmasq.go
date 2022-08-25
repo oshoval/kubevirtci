@@ -56,7 +56,7 @@ func DNSMasq(cli *client.Client, ctx context.Context, options *DNSMasqOptions) (
 			utils.TCPPortOrDie(utils.PortPrometheus):  {},
 			utils.TCPPortOrDie(utils.PortGrafana):     {},
 			utils.TCPPortOrDie(utils.PortUploadProxy): {},
-			utils.TCPPortOrDie(utils.PortDNS):         {},
+			utils.UDPPortOrDie(utils.PortDNS):         {},
 		},
 	}, &container.HostConfig{
 		Privileged:      true,

@@ -146,16 +146,16 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 
 	portMap := nat.PortMap{}
 
-	utils.AppendIfExplicit(portMap, utils.PortSSH, cmd.Flags(), "ssh-port")
-	utils.AppendIfExplicit(portMap, utils.PortVNC, cmd.Flags(), "vnc-port")
-	utils.AppendIfExplicit(portMap, utils.PortHTTP, cmd.Flags(), "http-port")
-	utils.AppendIfExplicit(portMap, utils.PortHTTPS, cmd.Flags(), "https-port")
-	utils.AppendIfExplicit(portMap, utils.PortAPI, cmd.Flags(), "k8s-port")
-	utils.AppendIfExplicit(portMap, utils.PortOCP, cmd.Flags(), "ocp-port")
-	utils.AppendIfExplicit(portMap, utils.PortRegistry, cmd.Flags(), "registry-port")
-	utils.AppendIfExplicit(portMap, utils.PortPrometheus, cmd.Flags(), "prometheus-port")
-	utils.AppendIfExplicit(portMap, utils.PortGrafana, cmd.Flags(), "grafana-port")
-	utils.AppendIfExplicit(portMap, utils.PortDNS, cmd.Flags(), "dns-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortSSH, cmd.Flags(), "ssh-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortVNC, cmd.Flags(), "vnc-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortHTTP, cmd.Flags(), "http-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortHTTPS, cmd.Flags(), "https-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortAPI, cmd.Flags(), "k8s-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortOCP, cmd.Flags(), "ocp-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortRegistry, cmd.Flags(), "registry-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortPrometheus, cmd.Flags(), "prometheus-port")
+	utils.AppendTCPIfExplicit(portMap, utils.PortGrafana, cmd.Flags(), "grafana-port")
+	utils.AppendUDPIfExplicit(portMap, utils.PortDNS, cmd.Flags(), "dns-port")
 
 	qemuArgs, err := cmd.Flags().GetString("qemu-args")
 	if err != nil {

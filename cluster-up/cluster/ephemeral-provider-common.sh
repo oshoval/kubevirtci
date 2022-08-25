@@ -142,6 +142,8 @@ function _add_common_params() {
     if [ -n "$KUBEVIRT_REALTIME_SCHEDULER" ]; then
         params=" --enable-realtime-scheduler $params"
     fi
+
+    params=" --dns-port 31111 $params"
     echo $params
 }
 
