@@ -154,6 +154,8 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 	utils.AppendIfExplicit(portMap, utils.PortRegistry, cmd.Flags(), "registry-port")
 	utils.AppendIfExplicit(portMap, utils.PortPrometheus, cmd.Flags(), "prometheus-port")
 	utils.AppendIfExplicit(portMap, utils.PortGrafana, cmd.Flags(), "grafana-port")
+	// add here, maybe remove from provision but it should be on dnsmasq, maybe just not during provision?
+	// check without my changes to see it pass, do phashed so it will be faster
 
 	qemuArgs, err := cmd.Flags().GetString("qemu-args")
 	if err != nil {

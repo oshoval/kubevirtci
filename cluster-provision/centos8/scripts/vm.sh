@@ -75,7 +75,7 @@ fi
 
 # Route ports from container to VM for first node
 if [ "$n" = "01" ] ; then
-  for port in 6443 8443 80 443 30007 30008 31001; do
+  for port in 53 6443 8443 80 443 30007 30008 31001; do
     if [ "$ROOTLESS" -ne 1 ]; then
       iptables -t nat -A PREROUTING -p tcp -i eth0 -m tcp --dport ${port} -j DNAT --to-destination 192.168.66.1${n}:${port}
     else
