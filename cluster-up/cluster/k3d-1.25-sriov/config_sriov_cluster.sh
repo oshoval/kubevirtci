@@ -67,6 +67,7 @@ sriov_components::deploy \
 
 # Verify that each sriov capable node has sriov VFs allocatable resource
 validate_nodes_sriov_allocatable_resource
+
 sriov_components::wait_pods_ready
 
 _kubectl get nodes

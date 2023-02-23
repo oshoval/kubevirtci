@@ -13,16 +13,15 @@ else
     export HOST_PORT=$ALTERNATE_HOST_PORT
 fi
 
-# ADAPT
 function print_sriov_data() {
     nodes=$(_kubectl get nodes -o=custom-columns=:.metadata.name --no-headers)
     for node in $nodes; do
-        if [[ ! "$node" =~ .*"control-plane".* ]]; then
+        if [[ ! "$node" =~ .*"server".* ]]; then
             echo "Node: $node"
             echo "VFs:"
-            ${CRI_BIN} exec $node bash -c "ls -l /sys/class/net/*/device/virtfn*"
+            ${CRI_BIN} exec $node /bin/sh -c "ls -l /sys/class/net/*/device/virtfn*"
             echo "PFs PCI Addresses:"
-            ${CRI_BIN} exec $node bash -c "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent"
+            ${CRI_BIN} exec $node /bin/sh -c "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent"
         fi
     done
 }
@@ -40,17 +39,25 @@ function configure_registry_proxy() {
     KIND_BIN="$kind_binary_path" PROXY_HOSTNAME="$ci_proxy_hostname" $configure_registry_proxy_script
 }
 
-function up() {
-    print hardware info for easier debugging based on logs
+function print_sriov_info() {
+    # print hardware info for easier debugging based on logs
     echo 'Available NICs'
     ${CRI_BIN} run --rm --cap-add=SYS_RAWIO quay.io/phoracek/lspci@sha256:0f3cacf7098202ef284308c64e3fc0ba441871a846022bb87d65ff130c79adb1 sh -c "lspci | egrep -i 'network|ethernet'"
     echo ""
+}
+
+function up() {
+    print_sriov_info
 
     k3d_up
 
     # REMOVE
-    echo BYE
-    exit 0
+    # echo BYE
+    # exit 0
+
+    # TODO add vfio mount
+    # add machine-id per server
+    # add workers maybe
 
     ${KUBEVIRTCI_PATH}/cluster/$KUBEVIRT_PROVIDER/config_sriov_cluster.sh
 

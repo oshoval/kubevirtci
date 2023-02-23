@@ -18,10 +18,11 @@ PATCH_NODE_SELECTOR_TEMPLATE="${MANIFESTS_DIR}/patch-node-selector.yaml.in"
 PATCH_NODE_SELECTOR="${CUSTOM_MANIFESTS}/patch-node-selector.yaml"
 
 KUBECONFIG="${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig"
-KUBECTL="${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubectl --kubeconfig=${KUBECONFIG}"
+#KUBECTL="${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubectl --kubeconfig=${KUBECONFIG}"
 
 function _kubectl() {
-    ${KUBECTL} "$@"
+    export KUBECONFIG=${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig
+    kubectl --kubeconfig=$KUBECONFIG "$@"
 }
 
 function _retry() {

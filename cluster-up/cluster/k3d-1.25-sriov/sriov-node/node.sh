@@ -82,7 +82,7 @@ function node::configure_sriov_vfs() {
 
     for node in "${nodes_array[@]}"; do
       ${CRI_BIN} cp "$CONFIGURE_VFS_SCRIPT_PATH" "$node:/"
-      ${CRI_BIN} exec "$node" bash -c "DRIVER=$driver DRIVER_KMODULE=$driver_kmodule VFS_COUNT=$vfs_count ./$config_vf_script"
+      ${CRI_BIN} exec "$node" /bin/sh -c "DRIVER=$driver DRIVER_KMODULE=$driver_kmodule VFS_COUNT=$vfs_count ./$config_vf_script"
       ${CRI_BIN} exec "$node" ls -la -Z /dev/vfio
     done
 }

@@ -7,7 +7,8 @@ function detect_cri() {
 }
 
 export CRI_BIN=${CRI_BIN:-$(detect_cri)}
-KUBEVIRT_NUM_SERVERS=${KUBEVIRT_NUM_SERVERS:-3}
+KUBEVIRT_NUM_SERVERS=${KUBEVIRT_NUM_SERVERS:-1}
+KUBEVIRT_NUM_AGENTS=${KUBEVIRT_NUM_AGENTS:-2}
 
 export KUBEVIRTCI_PATH
 export KUBEVIRTCI_CONFIG_PATH
@@ -102,14 +103,34 @@ function _print_kubeconfig() {
 function k3d_up() {
     setup_k3d
     
+
+    id1=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-1
+    id2=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-2
+    id3=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-3
+    echo 11111111111111111111111111111111 > ${id1}
+    echo 22222222222222222222222222222222 > ${id2}
+    echo 33333333333333333333333333333333 > ${id3}
+
     k3d cluster create $CLUSTER_NAME --registry-create $REGISTRY_NAME:$REGISTRY_HOST:$HOST_PORT \
                        --api-port $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
-                       --servers=$KUBEVIRT_NUM_SERVERS
+                       --servers=$KUBEVIRT_NUM_SERVERS \
+                       --agents=$KUBEVIRT_NUM_AGENTS \
+                       --k3s-arg "--disable=traefik@server:0" \
+                       --no-lb \
+                       -v /dev/vfio:/dev/vfio \
+                       -v /lib/modules:/lib/modules \
+                       -v ${id1}:/etc/machine-id@server:0 \
+                       -v ${id2}:/etc/machine-id@agent:0 \
+                       -v ${id3}:/etc/machine-id@agent:1
+
 
     _print_kubeconfig
     _prepare_nodes
     _install_cnis
     _prepare_config
+
+    kubectl label node k3d-sriov-agent-0 node-role.kubernetes.io/worker=worker
+    kubectl label node k3d-sriov-agent-1 node-role.kubernetes.io/worker=worker
 }
 
 function _kubectl() {
