@@ -12,9 +12,10 @@ NODE_CMD="${CRI_BIN} exec -it -d "
 export KUBEVIRTCI_PATH
 export KUBEVIRTCI_CONFIG_PATH
 
-REGISTRY_NAME=registry
 BASE_PATH=${KUBEVIRTCI_CONFIG_PATH:-$PWD}
 
+REGISTRY_NAME=registry
+REGISTRY_HOST=127.0.0.1
 KUBERNETES_SERVICE_HOST=127.0.0.1
 KUBERNETES_SERVICE_PORT=6443
 
@@ -75,11 +76,11 @@ function _install_cni_plugins {
 function _prepare_config() {
     echo "STEP: prepare config"
     cat >$BASE_PATH/$KUBEVIRT_PROVIDER/config-provider-$KUBEVIRT_PROVIDER.sh <<EOF
-master_ip=$KUBERNETES_SERVICE_HOST
+master_ip=${KUBERNETES_SERVICE_HOST}
 kubeconfig=${BASE_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig
 kubectl=kubectl
-docker_prefix=127.0.0.1:${HOST_PORT}/kubevirt
-manifest_docker_prefix=$REGISTRY_NAME:$HOST_PORT/kubevirt
+docker_prefix=${REGISTRY_HOST}:${HOST_PORT}/kubevirt
+manifest_docker_prefix=${REGISTRY_NAME}:${HOST_PORT}/kubevirt
 EOF
 }
 
@@ -111,9 +112,9 @@ function _print_kubeconfig() {
 function k3d_up() {
     setup_k3d
     
-    #k3d registry create --default-network bridge $REGISTRY_NAME --port $HOST_PORT
-    k3d cluster create $CLUSTER_NAME --registry-create $REGISTRY_NAME:$KUBERNETES_SERVICE_HOST:$HOST_PORT --api-port $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
-                       --servers=$KUBEVIRT_NUM_SERVERS #--registry-use k3d-$REGISTRY_NAME:$HOST_PORT
+    k3d cluster create $CLUSTER_NAME --registry-create $REGISTRY_NAME:$REGISTRY_HOST:$HOST_PORT \
+                       --api-port $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
+                       --servers=$KUBEVIRT_NUM_SERVERS
 
     _print_kubeconfig
     _prepare_nodes
