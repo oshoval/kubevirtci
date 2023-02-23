@@ -7,25 +7,16 @@ function detect_cri() {
 }
 
 export CRI_BIN=${CRI_BIN:-$(detect_cri)}
+KUBEVIRT_NUM_SERVERS=${KUBEVIRT_NUM_SERVERS:-3}
 
-NODE_CMD="${CRI_BIN} exec -it -d "
 export KUBEVIRTCI_PATH
 export KUBEVIRTCI_CONFIG_PATH
-
 BASE_PATH=${KUBEVIRTCI_CONFIG_PATH:-$PWD}
 
 REGISTRY_NAME=registry
 REGISTRY_HOST=127.0.0.1
 KUBERNETES_SERVICE_HOST=127.0.0.1
 KUBERNETES_SERVICE_PORT=6443
-
-KUBEVIRT_NUM_SERVERS=${KUBEVIRT_NUM_SERVERS:-3}
-
-# ADAPT
-function _wait_containers_ready {
-    echo "STEP: Waiting for all containers to become ready ..."
-    _kubectl wait --for=condition=Ready pod --all -n kube-system --timeout 5m
-}
 
 function _ssh_into_node() {
     # examples:
@@ -72,7 +63,6 @@ function _install_cni_plugins {
     done
 }
 
-# ADAPT
 function _prepare_config() {
     echo "STEP: prepare config"
     cat >$BASE_PATH/$KUBEVIRT_PROVIDER/config-provider-$KUBEVIRT_PROVIDER.sh <<EOF
