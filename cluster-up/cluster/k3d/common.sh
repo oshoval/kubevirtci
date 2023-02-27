@@ -116,6 +116,8 @@ function k3d_up() {
                        --servers=$KUBEVIRT_NUM_SERVERS \
                        --agents=$KUBEVIRT_NUM_AGENTS \
                        --k3s-arg "--disable=traefik@server:0" \
+                       --k3s-arg '--flannel-backend=none@server:*' \
+                       --volume "$(pwd)/cluster-up/cluster/k3d/calico.yaml:/var/lib/rancher/k3s/server/manifests/calico.yaml" \
                        --no-lb \
                        -v /dev/vfio:/dev/vfio \
                        -v /lib/modules:/lib/modules \
