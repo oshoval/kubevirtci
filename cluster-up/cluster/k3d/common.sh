@@ -27,7 +27,7 @@ function _ssh_into_node() {
 }
 
 function _install_cnis {
-    echo "STEP: install cnis"
+    echo "STEP: Install cnis"
     _install_cni_plugins
 }
 
@@ -65,7 +65,7 @@ function _install_cni_plugins {
 }
 
 function _prepare_config() {
-    echo "STEP: prepare config"
+    echo "STEP: Prepare config"
     cat >$BASE_PATH/$KUBEVIRT_PROVIDER/config-provider-$KUBEVIRT_PROVIDER.sh <<EOF
 master_ip=${KUBERNETES_SERVICE_HOST}
 kubeconfig=${BASE_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig
@@ -84,7 +84,7 @@ function _get_pods() {
 }
 
 function _prepare_nodes {
-    echo "STEP: prepare nodes"
+    echo "STEP: Prepare nodes"
     for node in $(_get_nodes | awk '{print $1}'); do
         ${CRI_BIN} exec $node /bin/sh -c "mount --make-rshared /"
     done
@@ -96,7 +96,7 @@ function setup_k3d() {
 }
 
 function _print_kubeconfig() {
-    echo "STEP: print kubeconfig"
+    echo "STEP: Print kubeconfig"
     k3d kubeconfig print $CLUSTER_NAME > ${BASE_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig
 }
 
@@ -116,15 +116,18 @@ function k3d_up() {
                        --servers=$KUBEVIRT_NUM_SERVERS \
                        --agents=$KUBEVIRT_NUM_AGENTS \
                        --k3s-arg "--disable=traefik@server:0" \
-                       --k3s-arg '--flannel-backend=none@server:*' \
-                       --volume "$(pwd)/cluster-up/cluster/k3d/calico.yaml:/var/lib/rancher/k3s/server/manifests/calico.yaml" \
                        --no-lb \
-                       -v /dev/vfio:/dev/vfio \
-                       -v /lib/modules:/lib/modules \
+                       --k3s-arg "--flannel-backend=none@server:*" \
+                       --k3s-arg "--kubelet-arg=feature-gates=CPUManager=true@server:0" \
+                       --k3s-arg "--kubelet-arg=cpu-manager-policy=static@server:0" \
+                       --k3s-arg "--kubelet-arg=kube-reserved=cpu=500m@server:0" \
+                       --k3s-arg "--kubelet-arg=system-reserved=cpu=500m@server:0" \
+                       --volume "$(pwd)/cluster-up/cluster/k3d/calico.yaml:/var/lib/rancher/k3s/server/manifests/calico.yaml@server:0" \
+                       -v /dev/vfio:/dev/vfio@agent:* \
+                       -v /lib/modules:/lib/modules@agent:* \
                        -v ${id1}:/etc/machine-id@server:0 \
                        -v ${id2}:/etc/machine-id@agent:0 \
                        -v ${id3}:/etc/machine-id@agent:1
-
 
     _print_kubeconfig
     _prepare_nodes
