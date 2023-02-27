@@ -145,5 +145,5 @@ function _kubectl() {
 
 function down() {
     k3d cluster delete $CLUSTER_NAME
-    docker rm --force $REGISTRY_NAME
+    ${CRI_BIN} rm --force $REGISTRY_NAME
 }
