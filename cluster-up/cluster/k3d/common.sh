@@ -111,7 +111,17 @@ function k3d_up() {
     echo 22222222222222222222222222222222 > ${id2}
     echo 33333333333333333333333333333333 > ${id3}
 
-    k3d cluster create $CLUSTER_NAME --registry-create $REGISTRY_NAME:$REGISTRY_HOST:$HOST_PORT \
+    if [ $CRI_BIN == podman ]; then
+      NETWORK=podman
+      podman pull docker.io/rancher/k3s:v1.25.6-k3s1 # TODO need to update according TAG
+    else
+      NETWORK=bridge
+    fi
+
+    k3d registry create --default-network $NETWORK $REGISTRY_NAME --port $REGISTRY_HOST:$HOST_PORT
+    ${CRI_BIN} rename k3d-registry registry
+
+    k3d cluster create $CLUSTER_NAME --registry-use $REGISTRY_NAME \
                        --api-port $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
                        --servers=$KUBEVIRT_NUM_SERVERS \
                        --agents=$KUBEVIRT_NUM_AGENTS \

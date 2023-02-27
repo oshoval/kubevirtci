@@ -64,7 +64,7 @@ function _check_all_pods_ready() {
 # not using kubectl wait since with the sriov operator the pods get restarted a couple of times and this is
 # more reliable
 function sriov_components::wait_pods_ready() {
-  local -r tries=30
+  local -r tries=60
   local -r wait_time=10
 
   local -r wait_message="Waiting for all pods to become ready.."
