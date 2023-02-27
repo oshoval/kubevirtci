@@ -128,10 +128,9 @@ function k3d_up() {
                        --k3s-arg "--disable=traefik@server:0" \
                        --no-lb \
                        --k3s-arg "--flannel-backend=none@server:*" \
-                       --k3s-arg "--kubelet-arg=feature-gates=CPUManager=true@server:0" \
-                       --k3s-arg "--kubelet-arg=cpu-manager-policy=static@server:0" \
-                       --k3s-arg "--kubelet-arg=kube-reserved=cpu=500m@server:0" \
-                       --k3s-arg "--kubelet-arg=system-reserved=cpu=500m@server:0" \
+                       --k3s-arg "--kubelet-arg=cpu-manager-policy=static@agent:*" \
+                       --k3s-arg "--kubelet-arg=kube-reserved=cpu=500m@agent:*" \
+                       --k3s-arg "--kubelet-arg=system-reserved=cpu=500m@agent:*" \
                        --volume "$(pwd)/cluster-up/cluster/k3d/calico.yaml:/var/lib/rancher/k3s/server/manifests/calico.yaml@server:0" \
                        -v /dev/vfio:/dev/vfio@agent:* \
                        -v /lib/modules:/lib/modules@agent:* \
