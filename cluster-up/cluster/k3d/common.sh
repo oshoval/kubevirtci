@@ -102,7 +102,7 @@ function _print_kubeconfig() {
 
 function k3d_up() {
     setup_k3d
-    
+
 
     id1=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-1
     id2=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-2

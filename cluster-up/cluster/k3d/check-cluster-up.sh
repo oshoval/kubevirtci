@@ -40,7 +40,7 @@ export CRI_BIN=${CRI_BIN:-$(detect_cri)}
   ${kubectl} get nodes
   ${kubectl} get pods -A
   echo ""
-  
+
   nodes=$(${kubectl} get nodes --no-headers | awk '{print $1}')
   for node in $nodes; do
     node_exec="${CRI_BIN} exec ${node}"
@@ -77,7 +77,7 @@ export CRI_BIN=${CRI_BIN:-$(detect_cri)}
     commit="${commit:0:9}"
     container_tag="--plugin-env kubevirt-conformance.CONTAINER_TAG=${latest}_${commit}"
     SONOBUOY_EXTRA_ARGS="${SONOBUOY_EXTRA_ARGS} ${container_tag}"
-    
+
     hack/conformance.sh ${PROVIDER_PATH}/conformance.json
-  fi 
+  fi
 )

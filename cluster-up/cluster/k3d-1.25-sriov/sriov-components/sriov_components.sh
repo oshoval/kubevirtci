@@ -127,7 +127,7 @@ function sriov_components::deploy() {
   local -r label_key=$5
   local -r label_value=$6
 
-  _create_custom_manifests_dir 
+  _create_custom_manifests_dir
   _prepare_node_selector_patch "$label_key" "$label_value"
   _prepare_sriovdp_resource_prefix_patch "$resource_prefix"
   _prepare_device_plugin_config \
