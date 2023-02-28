@@ -2,6 +2,9 @@
 
 set -e
 
+# See https://github.com/k3d-io/k3d/releases
+K3D_TAG=v5.4.7
+
 function detect_cri() {
     if podman ps >/dev/null 2>&1; then echo podman; elif docker ps >/dev/null 2>&1; then echo docker; fi
 }
@@ -20,19 +23,11 @@ KUBERNETES_SERVICE_HOST=127.0.0.1
 KUBERNETES_SERVICE_PORT=6443
 
 function _ssh_into_node() {
-    # examples:
-    # ./cluster-up/ssh.sh k3d-sriov-server-0 ls
-    # ./cluster-up/ssh.sh k3d-sriov-server-0 /bin/sh
     ${CRI_BIN} exec -it "$@"
 }
 
-function _install_cnis {
-    echo "STEP: Install cnis"
-    _install_cni_plugins
-}
-
 function _install_cni_plugins {
-    # check CPU arch
+    echo "STEP: Install cnis"
     PLATFORM=$(uname -m)
     case ${PLATFORM} in
     x86_64* | i?86_64* | amd64*)
@@ -58,14 +53,14 @@ function _install_cni_plugins {
         curl -sSL -o ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/$CNI_ARCHIVE $CNI_URL
     fi
 
-    for node in $(_get_nodes | awk '{print $1}'); do
+    for node in $(_get_nodes); do
         ${CRI_BIN} cp "${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/$CNI_ARCHIVE" $node:/
         ${CRI_BIN} exec $node /bin/sh -c "mkdir -p /opt/cni/bin && tar -xvzf $CNI_ARCHIVE -C /opt/cni/bin" > /dev/null
     done
 }
 
-function _prepare_config() {
-    echo "STEP: Prepare config"
+function _prepare_provider_config() {
+    echo "STEP: Prepare provider config"
     cat >$BASE_PATH/$KUBEVIRT_PROVIDER/config-provider-$KUBEVIRT_PROVIDER.sh <<EOF
 master_ip=${KUBERNETES_SERVICE_HOST}
 kubeconfig=${BASE_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig
@@ -76,46 +71,56 @@ EOF
 }
 
 function _get_nodes() {
-    _kubectl get nodes --no-headers
+    _kubectl get nodes -o=custom-columns=NAME:.metadata.name --no-headers
 }
 
-function _get_pods() {
-    _kubectl get pods -A --no-headers
+function _get_agent_nodes() {
+    # can be used only after _label_agents
+    _kubectl get nodes -lnode-role.kubernetes.io/worker=worker -o=custom-columns=NAME:.metadata.name --no-headers
 }
 
 function _prepare_nodes {
     echo "STEP: Prepare nodes"
-    for node in $(_get_nodes | awk '{print $1}'); do
+    for node in $(_get_nodes); do
         ${CRI_BIN} exec $node /bin/sh -c "mount --make-rshared /"
     done
 }
 
-function setup_k3d() {
-    TAG=v5.4.7
-    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=$TAG bash
+function _install_k3d() {
+    echo "STEP: Install k3d"
+    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=$K3D_TAG bash
 }
 
-function _print_kubeconfig() {
-    echo "STEP: Print kubeconfig"
+function _extract_kubeconfig() {
+    echo "STEP: Extract kubeconfig"
     k3d kubeconfig print $CLUSTER_NAME > ${BASE_PATH}/$KUBEVIRT_PROVIDER/.kubeconfig
 }
 
-function k3d_up() {
-    setup_k3d
+function _label_agents() {
+    echo "STEP: label agents"
+    for node in $(_get_nodes); do
+        if [[ "$node" =~ .*"agent".* ]]; then
+            _kubectl label node $node node-role.kubernetes.io/worker=worker
+        fi
+    done
+}
 
+function _create_cluser() {
+    echo "STEP: Create cluster"
 
     id1=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-1
     id2=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-2
     id3=${BASE_PATH}/$KUBEVIRT_PROVIDER/machine-id-3
-    echo 11111111111111111111111111111111 > ${id1}
-    echo 22222222222222222222222222222222 > ${id2}
-    echo 33333333333333333333333333333333 > ${id3}
+    printf '%.0s1' {1..32} > ${id1}
+    printf '%.0s2' {1..32} > ${id2}
+    printf '%.0s3' {1..32} > ${id3}
 
     if [ $CRI_BIN == podman ]; then
-      NETWORK=podman
-      podman pull docker.io/rancher/k3s:v1.25.6-k3s1 # TODO need to update according TAG
+        NETWORK=podman
+        # TODO need to update according K3D_TAG or fix with a nicer solution
+        podman pull docker.io/rancher/k3s:v1.25.6-k3s1
     else
-      NETWORK=bridge
+        NETWORK=bridge
     fi
 
     k3d registry create --default-network $NETWORK $REGISTRY_NAME --port $REGISTRY_HOST:$HOST_PORT
@@ -131,20 +136,22 @@ function k3d_up() {
                        --k3s-arg "--kubelet-arg=cpu-manager-policy=static@agent:*" \
                        --k3s-arg "--kubelet-arg=kube-reserved=cpu=500m@agent:*" \
                        --k3s-arg "--kubelet-arg=system-reserved=cpu=500m@agent:*" \
-                       --volume "$(pwd)/cluster-up/cluster/k3d/calico.yaml:/var/lib/rancher/k3s/server/manifests/calico.yaml@server:0" \
+                       --volume "$(pwd)/cluster-up/cluster/k3d/manifests/calico.yaml:/var/lib/rancher/k3s/server/manifests/calico.yaml@server:0" \
                        -v /dev/vfio:/dev/vfio@agent:* \
                        -v /lib/modules:/lib/modules@agent:* \
                        -v ${id1}:/etc/machine-id@server:0 \
                        -v ${id2}:/etc/machine-id@agent:0 \
                        -v ${id3}:/etc/machine-id@agent:1
+}
 
-    _print_kubeconfig
+function k3d_up() {
+    _install_k3d
+    _create_cluser
+    _extract_kubeconfig
     _prepare_nodes
-    _install_cnis
-    _prepare_config
-
-    kubectl label node k3d-sriov-agent-0 node-role.kubernetes.io/worker=worker
-    kubectl label node k3d-sriov-agent-1 node-role.kubernetes.io/worker=worker
+    _install_cni_plugins
+    _prepare_provider_config
+    _label_agents
 }
 
 function _kubectl() {
@@ -153,6 +160,16 @@ function _kubectl() {
 }
 
 function down() {
+    set +e
+    trap "set -e" RETURN
+
+    for agent_node in $(_get_agent_nodes); do
+      if ip netns exec $agent_node ip -d a | grep "vf 0" -B 2 > /dev/null; then
+        iface=$(ip netns exec $agent_node ip -d a | grep "vf 0" -B 2 | grep "UP" | awk -F": " '{print $2}')
+        ip netns exec $agent_node ip link set $iface netns 1 && echo "gracefully detached $iface from $agent_node"
+      fi
+    done
+
     k3d cluster delete $CLUSTER_NAME
-    ${CRI_BIN} rm --force $REGISTRY_NAME
+    ${CRI_BIN} rm --force $REGISTRY_NAME > /dev/null && echo "$REGISTRY_NAME deleted"
 }
