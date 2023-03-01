@@ -2,68 +2,42 @@
 
 set -e
 
-DEFAULT_CLUSTER_NAME="sriov"
-DEFAULT_HOST_PORT=5000
-ALTERNATE_HOST_PORT=5001
-export CLUSTER_NAME=${CLUSTER_NAME:-$DEFAULT_CLUSTER_NAME}
+export CLUSTER_NAME="sriov"
+export HOST_PORT=5000
 
-if [ $CLUSTER_NAME == $DEFAULT_CLUSTER_NAME ]; then
-    export HOST_PORT=$DEFAULT_HOST_PORT
-else
-    export HOST_PORT=$ALTERNATE_HOST_PORT
-fi
+DEPLOY_SRIOV=${DEPLOY_SRIOV:-true}
 
-function set_kind_params() {
-    export KIND_VERSION="${KIND_VERSION:-0.17.0}"
-    export KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-quay.io/kubevirtci/kindest-node:v1.23.13@sha256:ef453bb7c79f0e3caba88d2067d4196f427794086a7d0df8df4f019d5e336b61}"
-    export KUBECTL_PATH="${KUBECTL_PATH:-/bin/kubectl}"
+function print_available_nics() {
+    echo 'STEP: Available NICs'
+    # print hardware info for easier debugging based on logs
+    ${CRI_BIN} run --rm --cap-add=SYS_RAWIO quay.io/phoracek/lspci@sha256:0f3cacf7098202ef284308c64e3fc0ba441871a846022bb87d65ff130c79adb1 sh -c "lspci | egrep -i 'network|ethernet'"
+    echo
 }
 
-function print_sriov_data() {
-    nodes=$(_kubectl get nodes -o=custom-columns=:.metadata.name | awk NF)
+function print_agents_sriov_status() {
+    nodes=$(_get_agent_nodes)
+    echo "STEP: Print agents SR-IOV status"
     for node in $nodes; do
-        if [[ ! "$node" =~ .*"control-plane".* ]]; then
-            echo "Node: $node"
-            echo "VFs:"
-            ${CRI_BIN} exec $node bash -c "ls -l /sys/class/net/*/device/virtfn*"
-            echo "PFs PCI Addresses:"
-            ${CRI_BIN} exec $node bash -c "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent"
-        fi
+        echo "Node: $node"
+        echo "VFs:"
+        ${CRI_BIN} exec $node /bin/sh -c "ls -l /sys/class/net/*/device/virtfn*"
+        echo "PFs PCI Addresses:"
+        ${CRI_BIN} exec $node /bin/sh -c "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent"
     done
-}
-
-function configure_registry_proxy() {
-    [ "$CI" != "true" ] && return
-
-    echo "Configuring cluster nodes to work with CI mirror-proxy..."
-
-    local -r ci_proxy_hostname="docker-mirror-proxy.kubevirt-prow.svc"
-    local -r kind_binary_path="${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/.kind"
-    local -r configure_registry_proxy_script="${KUBEVIRTCI_PATH}/cluster/kind/configure-registry-proxy.sh"
-
-    KIND_BIN="$kind_binary_path" PROXY_HOSTNAME="$ci_proxy_hostname" $configure_registry_proxy_script
+    echo
 }
 
 function up() {
-    # print hardware info for easier debugging based on logs
-    echo 'Available NICs'
-    ${CRI_BIN} run --rm --cap-add=SYS_RAWIO quay.io/phoracek/lspci@sha256:0f3cacf7098202ef284308c64e3fc0ba441871a846022bb87d65ff130c79adb1 sh -c "lspci | egrep -i 'network|ethernet'"
-    echo ""
+    [ $DEPLOY_SRIOV == true ] && print_available_nics
+    k3d_up
 
-    cp $KIND_MANIFESTS_DIR/kind.yaml ${KUBEVIRTCI_CONFIG_PATH}/$KUBEVIRT_PROVIDER/kind.yaml
-    kind_up
+    if [ $DEPLOY_SRIOV == true ]; then
+        ${KUBEVIRTCI_PATH}/cluster/$KUBEVIRT_PROVIDER/config_sriov_cluster.sh
+        print_agents_sriov_status
+    fi
 
-    configure_registry_proxy
-
-    # remove the rancher.io kind default storageClass
-    _kubectl delete sc standard
-
-    ${KUBEVIRTCI_PATH}/cluster/$KUBEVIRT_PROVIDER/config_sriov_cluster.sh
-
-    print_sriov_data
-    echo "$KUBEVIRT_PROVIDER cluster '$CLUSTER_NAME' is ready"
+    version=$(_kubectl get node k3d-sriov-server-0 -o=custom-columns=VERSION:.status.nodeInfo.kubeletVersion --no-headers)
+    echo "$KUBEVIRT_PROVIDER cluster '$CLUSTER_NAME' is ready ($version)"
 }
 
-set_kind_params
-
-source ${KUBEVIRTCI_PATH}/cluster/kind/common.sh
+source ${KUBEVIRTCI_PATH}/cluster/k3d/common.sh
