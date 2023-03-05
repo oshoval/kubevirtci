@@ -27,9 +27,21 @@ function print_agents_sriov_status() {
     echo
 }
 
+function configure_registry_proxy() {
+    # [ "$CI" != "true" ] && return
+
+    echo "Configuring cluster nodes to work with CI mirror-proxy..."
+
+    local -r ci_proxy_hostname="docker-mirror-proxy.kubevirt-prow.svc"
+    local -r configure_registry_proxy_script="${KUBEVIRTCI_PATH}/cluster/k3d/configure-registry-proxy.sh"
+
+    PROXY_HOSTNAME="$ci_proxy_hostname" $configure_registry_proxy_script
+}
+
 function up() {
     [ $DEPLOY_SRIOV == true ] && print_available_nics
     k3d_up
+    configure_registry_proxy
 
     if [ $DEPLOY_SRIOV == true ]; then
         ${KUBEVIRTCI_PATH}/cluster/$KUBEVIRT_PROVIDER/config_sriov_cluster.sh
