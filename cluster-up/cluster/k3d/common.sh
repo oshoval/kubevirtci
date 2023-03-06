@@ -116,6 +116,10 @@ function _label_agents() {
     done
 }
 
+function _deploy_cni() {
+    _kubectl apply -f cluster-up/cluster/k3d/manifests/kube-flannel.yml
+}
+
 function _create_cluser() {
     echo "STEP: Create cluster"
 
@@ -131,7 +135,6 @@ function _create_cluser() {
     k3d registry create --default-network $NETWORK $REGISTRY_NAME --port $REGISTRY_HOST:$HOST_PORT
     ${CRI_BIN} rename k3d-$REGISTRY_NAME $REGISTRY_NAME
 
-    CALICO=$(pwd)/cluster-up/cluster/k3d/manifests/calico.yaml
     k3d cluster create $CLUSTER_NAME --registry-use $REGISTRY_NAME \
         --api-port $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
         --servers=$KUBEVIRT_NUM_SERVERS \
@@ -142,7 +145,6 @@ function _create_cluser() {
         --k3s-arg "--kubelet-arg=cpu-manager-policy=static@agent:*" \
         --k3s-arg "--kubelet-arg=kube-reserved=cpu=500m@agent:*" \
         --k3s-arg "--kubelet-arg=system-reserved=cpu=500m@agent:*" \
-        -v "$CALICO:/var/lib/rancher/k3s/server/manifests/calico.yaml@server:0" \
         -v /dev/vfio:/dev/vfio@agent:* \
         -v /lib/modules:/lib/modules@agent:* \
         -v ${id1}:/etc/machine-id@server:0 \
@@ -155,6 +157,7 @@ function k3d_up() {
     _create_cluser
     _extract_kubeconfig
     _download_kubectl
+    _deploy_cni
     _prepare_nodes
     _install_cni_plugins
     _prepare_provider_config

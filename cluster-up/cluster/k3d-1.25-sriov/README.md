@@ -90,11 +90,8 @@ replace this file `cluster-up/cluster/$KUBEVIRT_PROVIDER/sriov-components/manife
 and update the kustomization file `cluster-up/cluster/$KUBEVIRT_PROVIDER/sriov-components/manifests/multus/kustomization.yaml`
 according needs.
 
-### Bumping calico
-1. Fetch new calico yaml (https://docs.tigera.io/calico/3.25/getting-started/kubernetes/k3s/quickstart)
-   Enable `allow_ip_forwarding` (See https://k3d.io/v5.4.7/usage/advanced/calico)
-   Or use the one that is suggested here https://k3d.io/v5.4.7/usage/advanced/calico whenever it is updated.
-2. Prefix the images in the yaml with `quay.io/` unless they have it already.
-3. Update `cluster-up/cluster/k3d/manifests/calico.yaml` (see `CALICO` at `cluster-up/cluster/k3d/common.sh` for more info)
-
-Note: Make sure to follow the latest verions on the links above.
+### Bumping flannel
+1. Fetch a newer yaml (https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml)
+2. Update `"Network"` to `"10.42.0.0/16"` (contains the PodCIDR `10.42.0.0/24`)
+2. TODO - mirror images to quay
+3. Replace the manifest at `cluster-up/cluster/k3d/manifests`
