@@ -1,0 +1,56 @@
+apiVersion: k3d.io/v1alpha4
+kind: Simple
+metadata:
+  name: $CLUSTER_NAME
+servers: $KUBEVIRT_NUM_SERVERS
+agents: $KUBEVIRT_NUM_AGENTS
+kubeAPI:
+  hostIP: "127.0.0.1"
+  hostPort: "6443"
+network: $NETWORK
+volumes:
+  - volume: ${CALICO}:/var/lib/rancher/k3s/server/manifests/calico.yaml
+    nodeFilters:
+      - server:0
+  - volume: /dev/vfio:/dev/vfio
+    nodeFilters:
+      - agent:*
+  - volume: /lib/modules:/lib/modules
+    nodeFilters:
+      - agent:*
+  - volume: ${id1}:/etc/machine-id
+    nodeFilters:
+      - server:0
+  - volume: ${id2}:/etc/machine-id
+    nodeFilters:
+      - agent:0
+  - volume: ${id3}:/etc/machine-id
+    nodeFilters:
+      - agent:1
+registries:
+  use:
+    - $REGISTRY_NAME:$HOST_PORT
+options:
+  k3d:
+    wait: false
+    disableLoadbalancer: true
+  k3s:
+    extraArgs:
+      - arg: "--disable=traefik"
+        nodeFilters:
+          - server:0
+      - arg: "--flannel-backend=none"
+        nodeFilters:
+          - server:*
+      - arg: "--kubelet-arg=cpu-manager-policy=static"
+        nodeFilters:
+          - agent:*
+      - arg: "--kubelet-arg=kube-reserved=cpu=500m"
+        nodeFilters:
+          - agent:*
+      - arg: "--kubelet-arg=system-reserved=cpu=500m"
+        nodeFilters:
+          - agent:*
+      - arg: "--debug"
+        nodeFilters:
+          - "agent:*"          
