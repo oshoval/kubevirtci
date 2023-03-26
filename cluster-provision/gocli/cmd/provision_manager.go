@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,12 +16,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	fsys "kubevirt.io/kubevirtci/cluster-provision/gocli/cmd/filesystem"
 )
 
 const (
 	// Git status
-	DELETED = "D"
-	RENAMED = "R"
+	FILE_ADDED   = "A"
+	FILE_DELETED = "D"
+	FILE_RENAMED = "R"
 
 	TARGET_NONE = "none"
 )
@@ -32,6 +36,16 @@ type parameters struct {
 }
 
 type OutputSplitter struct{}
+
+var fileSystem fsys.FileSystem = fsys.RealFileSystem{}
+
+func SetFileSystem(fs fsys.FileSystem) {
+	if fs == nil {
+		fileSystem = fsys.RealFileSystem{}
+	} else {
+		fileSystem = fs
+	}
+}
 
 // NewProvisionManagerCommand determines which providers should be rebuilt
 func NewProvisionManagerCommand() *cobra.Command {
@@ -76,7 +90,7 @@ func provisionManager(cmd *cobra.Command, arguments []string) error {
 		return err
 	}
 
-	rulesDB, err := buildRulesDB(params.rulesFile, targets)
+	rulesDB, err := buildRulesDBfromFile(params.rulesFile, targets)
 	if err != nil {
 		return err
 	}
@@ -152,7 +166,7 @@ func getTargets(path string) ([]string, error) {
 }
 
 func globDirectories(path string) ([]string, error) {
-	files, err := filepath.Glob(path)
+	files, err := fileSystem.Glob(path)
 	if err != nil {
 		return nil, err
 	}
@@ -203,12 +217,11 @@ func processChanges(rulesDB map[string][]string, targets []string, changes strin
 		status := tokens[0]
 		fileName := tokens[1]
 
-		// Renamed files looks like: R* OLD_NAME NEW_NAME
-		if strings.HasPrefix(status, RENAMED) {
-			fileName = tokens[2]
+		if strings.HasPrefix(status, FILE_RENAMED) {
 			if len(tokens) != 3 {
 				return nil, fmt.Errorf("wrong input syntax, should be <status>\\t<old_filename>\\t<new_filename>")
 			}
+			fileName = tokens[2]
 		}
 
 		// Skip markdown files
@@ -235,7 +248,7 @@ func processChanges(rulesDB map[string][]string, targets []string, changes strin
 	}
 
 	if errorFound {
-		return nil, fmt.Errorf("Errors were detected")
+		return nil, fmt.Errorf("Errors detected: files dont have a matching rule")
 	}
 
 	return targetToRebuild, nil
@@ -253,7 +266,7 @@ func matcher(rulesDB map[string][]string, fileName string, status string) ([]str
 	}
 
 	candid := fileName
-	for candid != "." {
+	for candid != "." && candid != "/" {
 		candid = filepath.Dir(candid)
 		match, ok = rulesDB[candid+"/*"]
 		if ok {
@@ -261,7 +274,7 @@ func matcher(rulesDB map[string][]string, fileName string, status string) ([]str
 		}
 	}
 
-	if status != DELETED {
+	if status != FILE_DELETED {
 		return nil, fmt.Errorf("Failed to find a rule for " + fileName)
 	}
 
@@ -296,16 +309,20 @@ func runCommand(command string, args []string) (string, error) {
 	return stdout.String(), nil
 }
 
-func buildRulesDB(rulesFile string, targets []string) (map[string][]string, error) {
-	rulesDB := make(map[string][]string)
-
-	inFile, err := os.Open(rulesFile)
+func buildRulesDBfromFile(rulesFile string, targets []string) (map[string][]string, error) {
+	inFile, err := fileSystem.Open(rulesFile)
 	if err != nil {
 		return nil, err
 	}
 	defer inFile.Close()
 
-	scanner := bufio.NewScanner(inFile)
+	return buildRulesDB(inFile, targets)
+}
+
+func buildRulesDB(input io.Reader, targets []string) (map[string][]string, error) {
+	rulesDB := make(map[string][]string)
+
+	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" || strings.HasPrefix(line, "#") {

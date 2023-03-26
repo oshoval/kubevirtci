@@ -21,7 +21,7 @@ Makefile - none
 OWNERS - none
 .gitignore - none
 
-# section: regex
+# section: regex / regex_none
 # notes:
 #   regex is always recursive, will create a specific rule for each folder
 #     example: cluster-provision/k8s/[0-9].[0-9][0-9]*
