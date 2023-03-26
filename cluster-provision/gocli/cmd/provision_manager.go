@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,6 +33,8 @@ type parameters struct {
 }
 
 type OutputSplitter struct{}
+
+var globFunction = globDirectories
 
 // NewProvisionManagerCommand determines which providers should be rebuilt
 func NewProvisionManagerCommand() *cobra.Command {
@@ -76,7 +79,7 @@ func provisionManager(cmd *cobra.Command, arguments []string) error {
 		return err
 	}
 
-	rulesDB, err := buildRulesDB(params.rulesFile, targets)
+	rulesDB, err := buildRulesDBfromFile(params.rulesFile, targets)
 	if err != nil {
 		return err
 	}
@@ -137,7 +140,7 @@ func (splitter *OutputSplitter) Write(p []byte) (n int, err error) {
 }
 
 func getTargets(path string) ([]string, error) {
-	directories, err := globDirectories("cluster-provision/k8s/*")
+	directories, err := globFunction("cluster-provision/k8s/*")
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +238,7 @@ func processChanges(rulesDB map[string][]string, targets []string, changes strin
 	}
 
 	if errorFound {
-		return nil, fmt.Errorf("Errors were detected")
+		return nil, fmt.Errorf("Errors detected: files dont have a matching rule")
 	}
 
 	return targetToRebuild, nil
@@ -296,16 +299,20 @@ func runCommand(command string, args []string) (string, error) {
 	return stdout.String(), nil
 }
 
-func buildRulesDB(rulesFile string, targets []string) (map[string][]string, error) {
-	rulesDB := make(map[string][]string)
-
+func buildRulesDBfromFile(rulesFile string, targets []string) (map[string][]string, error) {
 	inFile, err := os.Open(rulesFile)
 	if err != nil {
 		return nil, err
 	}
 	defer inFile.Close()
 
-	scanner := bufio.NewScanner(inFile)
+	return buildRulesDB(inFile, targets)
+}
+
+func buildRulesDB(input io.Reader, targets []string) (map[string][]string, error) {
+	rulesDB := make(map[string][]string)
+
+	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -331,7 +338,7 @@ func buildRulesDB(rulesFile string, targets []string) (map[string][]string, erro
 			}
 			rulesDB[dir] = excludeTarget(target, targets)
 		case target == "regex":
-			directories, _ := globDirectories(dir)
+			directories, _ := globFunction(dir)
 			for _, dir := range directories {
 				target = strings.ReplaceAll(filepath.Base(dir), "k8s-", "")
 				if !isTargetValid(target, targets) {
@@ -340,7 +347,7 @@ func buildRulesDB(rulesFile string, targets []string) (map[string][]string, erro
 				rulesDB[dir+"/*"] = []string{target}
 			}
 		case target == "regex_none":
-			directories, _ := globDirectories(dir)
+			directories, _ := globFunction(dir)
 			for _, dir := range directories {
 				rulesDB[dir+"/*"] = []string{TARGET_NONE}
 			}
