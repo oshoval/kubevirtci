@@ -7,7 +7,6 @@ agents: $KUBEVIRT_NUM_AGENTS
 kubeAPI:
   hostIP: "127.0.0.1"
   hostPort: "6443"
-network: $NETWORK
 volumes:
   - volume: ${CALICO}:/var/lib/rancher/k3s/server/manifests/calico.yaml
     nodeFilters:
