@@ -191,11 +191,13 @@ cni_manifest="/provision/cni.yaml"
 cni_diff="/tmp/cni.diff"
 cni_manifest_ipv6="/provision/cni_ipv6.yaml"
 cni_ipv6_diff="/tmp/cni_ipv6.diff"
+new_cni="/tmp/new_cni.yaml"
 
 cp /tmp/cni.do-not-change.yaml $cni_manifest
 mv /tmp/cni.do-not-change.yaml $cni_manifest_ipv6
 patch $cni_manifest $cni_diff
 patch $cni_manifest_ipv6 $cni_ipv6_diff
+cp -f $new_cni $cni_manifest
 
 kubectl kustomize /tmp/prometheus/grafana > /tmp/grafana-deployment.yaml.tmp
 mv -f /tmp/grafana-deployment.yaml.tmp /tmp/prometheus/grafana/grafana-deployment.yaml
