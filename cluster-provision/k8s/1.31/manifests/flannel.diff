@@ -1,0 +1,90 @@
+--- flannel.do-not-change.yaml	2025-08-05 08:50:16.408498711 +0300
++++ flannel-temp.yaml	2025-08-05 09:04:24.806781189 +0300
+@@ -27,6 +27,8 @@
+   - pods
+   verbs:
+   - get
++  - list
++  - watch
+ - apiGroups:
+   - ""
+   resources:
+@@ -41,6 +43,28 @@
+   - nodes/status
+   verbs:
+   - patch
++- apiGroups:
++  - ""
++  resources:
++  - namespaces
++  verbs:
++  - list
++  - watch
++- apiGroups:
++  - "networking.k8s.io"
++  resources:
++  - networkpolicies
++  verbs:
++  - list
++  - watch
++- apiGroups:
++  - "policy.networking.k8s.io"
++  resources:
++  - adminnetworkpolicies
++  - baselineadminnetworkpolicies
++  verbs:
++  - list
++  - watch
+ ---
+ apiVersion: rbac.authorization.k8s.io/v1
+ kind: ClusterRoleBinding
+@@ -82,6 +106,9 @@
+   net-conf.json: |
+     {
+       "Network": "10.244.0.0/16",
++      "IPv6Network": "fd10:244::/56",
++      "EnableIPv4": true,
++      "EnableIPv6": true,
+       "EnableNFTables": false,
+       "Backend": {
+         "Type": "vxlan"
+@@ -164,6 +191,29 @@
+           name: flannel-cfg
+         - mountPath: /run/xtables.lock
+           name: xtables-lock
++      - name: kube-network-policies
++        image: registry.k8s.io/networking/kube-network-policies:v0.7.0
++        command:
++        - "/bin/netpol"
++        - "--hostname-override=$(MY_NODE_NAME)"
++        - "--v=2"
++        env:
++        - name: MY_NODE_NAME
++          valueFrom:
++            fieldRef:
++              fieldPath: spec.nodeName
++        volumeMounts:
++        - name: lib-modules
++          mountPath: /lib/modules
++          readOnly: true
++        resources:
++          requests:
++            cpu: "100m"
++            memory: "50Mi"
++        securityContext:
++          privileged: true
++          capabilities:
++            add: ["NET_ADMIN"]
+       hostNetwork: true
+       initContainers:
+       - args:
+@@ -196,6 +246,9 @@
+       - effect: NoSchedule
+         operator: Exists
+       volumes:
++      - name: lib-modules
++        hostPath:
++          path: /lib/modules
+       - hostPath:
+           path: /run/flannel
+         name: run

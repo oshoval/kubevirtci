@@ -17,13 +17,15 @@ var advAudit []byte
 type node01Provisioner struct {
 	sshClient   libssh.Client
 	singleStack bool
+	flannel     bool
 	etcdNoFsync bool
 }
 
-func NewNode01Provisioner(sc libssh.Client, singleStack, etcdNoFsync bool) *node01Provisioner {
+func NewNode01Provisioner(sc libssh.Client, singleStack, flannel, etcdNoFsync bool) *node01Provisioner {
 	return &node01Provisioner{
 		sshClient:   sc,
 		singleStack: singleStack,
+		flannel:     flannel,
 		etcdNoFsync: etcdNoFsync,
 	}
 }
@@ -34,7 +36,15 @@ func (n *node01Provisioner) Exec() error {
 		cniManifest = "/provision/cni.yaml"
 	)
 
+	if n.flannel {
+		kubeadmConf = "/etc/kubernetes/kubeadm_flannel.conf"
+		cniManifest = "/etc/kubernetes/flannel.conf"
+	}
+
 	if n.singleStack {
+		if n.flannel {
+			return fmt.Errorf("error: flannel single stack is not supported yet")
+		}
 		kubeadmConf = "/etc/kubernetes/kubeadm_ipv6.conf"
 		cniManifest = "/provision/cni_ipv6.yaml"
 	}
