@@ -1,5 +1,5 @@
---- flannel.do-not-change.yaml	2025-08-05 08:50:16.408498711 +0300
-+++ flannel-temp.yaml	2025-08-05 09:04:24.806781189 +0300
+--- flannel.do-not-change.yaml	2025-08-05 10:22:53.436959004 +0300
++++ flannel-temp.yaml	2025-08-05 10:58:53.321108163 +0300
 @@ -27,6 +27,8 @@
    - pods
    verbs:
@@ -38,16 +38,18 @@
  ---
  apiVersion: rbac.authorization.k8s.io/v1
  kind: ClusterRoleBinding
-@@ -82,6 +106,9 @@
+@@ -82,7 +106,10 @@
    net-conf.json: |
      {
        "Network": "10.244.0.0/16",
+-      "EnableNFTables": false,
 +      "IPv6Network": "fd10:244::/56",
 +      "EnableIPv4": true,
 +      "EnableIPv6": true,
-       "EnableNFTables": false,
++      "EnableNFTables": true,
        "Backend": {
          "Type": "vxlan"
+       }
 @@ -164,6 +191,29 @@
            name: flannel-cfg
          - mountPath: /run/xtables.lock
