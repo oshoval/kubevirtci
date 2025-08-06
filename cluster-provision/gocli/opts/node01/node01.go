@@ -38,7 +38,7 @@ func (n *node01Provisioner) Exec() error {
 
 	if n.flannel {
 		kubeadmConf = "/etc/kubernetes/kubeadm_flannel.conf"
-		cniManifest = "/etc/kubernetes/flannel.conf"
+		cniManifest = "/etc/kubernetes/flannel.yaml"
 	}
 
 	if n.singleStack {
@@ -71,6 +71,14 @@ func (n *node01Provisioner) Exec() error {
 		"chcon -t container_file_t /var/lib/rook",
 	}
 	for _, cmd := range cmds {
+		err := n.sshClient.Command(cmd)
+		if err != nil {
+			return fmt.Errorf("error executing %s: %s", cmd, err)
+		}
+	}
+
+	if n.flannel {
+		cmd := `kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f /etc/kubernetes/knp.yaml`
 		err := n.sshClient.Command(cmd)
 		if err != nil {
 			return fmt.Errorf("error executing %s: %s", cmd, err)

@@ -87,6 +87,16 @@ export KUBEVIRTCI_GOCLI_CONTAINER=quay.io/kubevirtci/gocli:latest
         bash -x "$DIR/check-pod-images.sh" "${provision_dir}"
     fi
 
+    if [[ "${KUBEVIRT_FLANNEL}" == "true" ]]; then
+        # workaround for https://github.com/kubernetes-sigs/kube-network-policies/issues/191
+        for i in $(seq 1 ${KUBEVIRT_NUM_NODES}); do
+            n="$(printf "%02d" ${i})"
+            handle=$(./cluster-up/ssh.sh node${n} "sudo nft -a list chain inet kube-network-policies postrouting | grep ipv6-icmp" | awk '{print $NF}' | tr -d '\r\n')
+            ./cluster-up/ssh.sh node${n} "sudo nft delete rule inet kube-network-policies postrouting handle $handle"
+            ./cluster-up/ssh.sh node${n} "sudo nft add rule inet kube-network-policies postrouting meta l4proto ipv6-icmp accept"            
+        done
+    fi
+
     # Run conformance test only at CI and if the provider has them activated
     conformance_config=$DIR/${provision_dir}/conformance.json
 

@@ -1,92 +1,16 @@
---- flannel.do-not-change.yaml	2025-08-05 10:22:53.436959004 +0300
-+++ flannel-temp.yaml	2025-08-05 10:58:53.321108163 +0300
-@@ -27,6 +27,8 @@
-   - pods
-   verbs:
-   - get
-+  - list
-+  - watch
- - apiGroups:
-   - ""
-   resources:
-@@ -41,6 +43,28 @@
-   - nodes/status
-   verbs:
-   - patch
-+- apiGroups:
-+  - ""
-+  resources:
-+  - namespaces
-+  verbs:
-+  - list
-+  - watch
-+- apiGroups:
-+  - "networking.k8s.io"
-+  resources:
-+  - networkpolicies
-+  verbs:
-+  - list
-+  - watch
-+- apiGroups:
-+  - "policy.networking.k8s.io"
-+  resources:
-+  - adminnetworkpolicies
-+  - baselineadminnetworkpolicies
-+  verbs:
-+  - list
-+  - watch
- ---
- apiVersion: rbac.authorization.k8s.io/v1
- kind: ClusterRoleBinding
-@@ -82,7 +106,10 @@
+diff --git a/cluster-provision/k8s/1.33/manifests/flannel.do-not-change.yaml b/cluster-provision/k8s/1.33/manifests/flannel.do-not-change.yaml
+index 48b541c3..1058133e 100644
+--- a/cluster-provision/k8s/1.33/manifests/flannel.do-not-change.yaml
++++ b/cluster-provision/k8s/1.33/manifests/flannel.do-not-change.yaml
+@@ -82,7 +82,10 @@ data:
    net-conf.json: |
      {
        "Network": "10.244.0.0/16",
 -      "EnableNFTables": false,
 +      "IPv6Network": "fd10:244::/56",
++      "EnableNFTables": true,
 +      "EnableIPv4": true,
 +      "EnableIPv6": true,
-+      "EnableNFTables": true,
        "Backend": {
          "Type": "vxlan"
        }
-@@ -164,6 +191,29 @@
-           name: flannel-cfg
-         - mountPath: /run/xtables.lock
-           name: xtables-lock
-+      - name: kube-network-policies
-+        image: registry.k8s.io/networking/kube-network-policies:v0.7.0
-+        command:
-+        - "/bin/netpol"
-+        - "--hostname-override=$(MY_NODE_NAME)"
-+        - "--v=2"
-+        env:
-+        - name: MY_NODE_NAME
-+          valueFrom:
-+            fieldRef:
-+              fieldPath: spec.nodeName
-+        volumeMounts:
-+        - name: lib-modules
-+          mountPath: /lib/modules
-+          readOnly: true
-+        resources:
-+          requests:
-+            cpu: "100m"
-+            memory: "50Mi"
-+        securityContext:
-+          privileged: true
-+          capabilities:
-+            add: ["NET_ADMIN"]
-       hostNetwork: true
-       initContainers:
-       - args:
-@@ -196,6 +246,9 @@
-       - effect: NoSchedule
-         operator: Exists
-       volumes:
-+      - name: lib-modules
-+        hostPath:
-+          path: /lib/modules
-       - hostPath:
-           path: /run/flannel
-         name: run
