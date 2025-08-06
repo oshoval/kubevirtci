@@ -53,10 +53,12 @@ func (n *node01Provisioner) Exec() error {
 			return fmt.Errorf("error: flannel single stack is not supported yet")
 		}
 		if n.kindnet {
-			return fmt.Errorf("error: kindnet single stack is not supported yet")
+			kubeadmConf = "/etc/kubernetes/kubeadm_kindnet_ipv6.conf"
+			cniManifest = "/etc/kubernetes/kindnet.yaml"
+		} else {
+			kubeadmConf = "/etc/kubernetes/kubeadm_ipv6.conf"
+			cniManifest = "/provision/cni_ipv6.yaml"
 		}
-		kubeadmConf = "/etc/kubernetes/kubeadm_ipv6.conf"
-		cniManifest = "/provision/cni_ipv6.yaml"
 	}
 
 	kubeadmInitCmd := "kubeadm init --config " + kubeadmConf + " -v5"

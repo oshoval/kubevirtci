@@ -330,12 +330,17 @@ kubeadm_flannel="/etc/kubernetes/kubeadm_flannel.conf"
 kubeadm_kindnet_raw="/tmp/kubeadm_kindnet.conf"
 kubeadm_kindnet="/etc/kubernetes/kubeadm_kindnet.conf"
 
+kubeadm_kindnet_ipv6_raw="/tmp/kubeadm_kindnet_ipv6.conf"
+kubeadm_kindnet_ipv6="/etc/kubernetes/kubeadm_kindnet_ipv6.conf"
+
 envsubst < $kubeadm_raw > $kubeadm_manifest
 envsubst < $kubeadm_raw_ipv6 > $kubeadm_manifest_ipv6
 
 envsubst < $kubeadm_flannel_raw > $kubeadm_flannel
 
 envsubst < $kubeadm_kindnet_raw > $kubeadm_kindnet
+
+envsubst < $kubeadm_kindnet_ipv6_raw > $kubeadm_kindnet_ipv6
 
 until ip address show dev eth0 | grep global | grep inet6; do sleep 1; done
 
