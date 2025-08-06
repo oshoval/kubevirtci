@@ -49,6 +49,7 @@ export KUBEVIRTCI_GOCLI_CONTAINER=quay.io/kubevirtci/gocli:latest
         export KUBEVIRT_DEPLOY_GRAFANA=true
         export KUBEVIRT_DEPLOY_CDI=true
         export KUBEVIRT_STORAGE="rook-ceph-default"
+        export KUBEVIRT_KINDNET=true
     fi
 
     trap cleanup EXIT ERR SIGINT SIGTERM SIGQUIT
