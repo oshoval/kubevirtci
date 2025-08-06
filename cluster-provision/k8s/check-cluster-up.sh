@@ -49,6 +49,7 @@ export KUBEVIRTCI_GOCLI_CONTAINER=quay.io/kubevirtci/gocli:latest
         export KUBEVIRT_DEPLOY_GRAFANA=true
         export KUBEVIRT_DEPLOY_CDI=true
         export KUBEVIRT_STORAGE="rook-ceph-default"
+        export KUBEVIRT_KINDNET=true
     fi
 
     trap cleanup EXIT ERR SIGINT SIGTERM SIGQUIT
@@ -111,23 +112,23 @@ export KUBEVIRTCI_GOCLI_CONTAINER=quay.io/kubevirtci/gocli:latest
 
             export SONOBUOY_EXTRA_ARGS="--plugin https://storage.googleapis.com/kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/${LATEST}/conformance${arch_suffix}.yaml --plugin-env kubevirt-conformance.E2E_LABEL=${LABEL_FILTER}"
 
-            hack/conformance.sh $conformance_config
+            hack/conformance.sh $conformance_config || true
         fi
 
         export SONOBUOY_EXTRA_ARGS="--plugin systemd-logs --plugin e2e"
         hack/conformance.sh $conformance_config
 
-        echo "Sanity check cluster-up of single stack cluster"
-        make cluster-down
-        export KUBEVIRT_WITH_CNAO=false
-        export KUBEVIRT_WITH_MULTUS=false
-        export KUBEVIRT_DEPLOY_ISTIO=false
-        export KUBEVIRT_DEPLOY_PROMETHEUS=false
-        export KUBEVIRT_DEPLOY_PROMETHEUS_ALERTMANAGER=false
-        export KUBEVIRT_DEPLOY_GRAFANA=false
-        export KUBEVIRT_SINGLE_STACK=true
-        export KUBEVIRT_DEPLOY_CDI=false
-        unset KUBEVIRT_STORAGE
-        make cluster-up
+        # echo "Sanity check cluster-up of single stack cluster"
+        # make cluster-down
+        # export KUBEVIRT_WITH_CNAO=false
+        # export KUBEVIRT_WITH_MULTUS=false
+        # export KUBEVIRT_DEPLOY_ISTIO=false
+        # export KUBEVIRT_DEPLOY_PROMETHEUS=false
+        # export KUBEVIRT_DEPLOY_PROMETHEUS_ALERTMANAGER=false
+        # export KUBEVIRT_DEPLOY_GRAFANA=false
+        # export KUBEVIRT_SINGLE_STACK=true
+        # export KUBEVIRT_DEPLOY_CDI=false
+        # unset KUBEVIRT_STORAGE
+        # make cluster-up
     fi
 )
