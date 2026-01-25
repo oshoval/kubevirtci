@@ -79,8 +79,20 @@ func (n *node01Provisioner) Exec() error {
 	}
 
 	if n.flannel {
-		cmd := `kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f /etc/kubernetes/knp.yaml`
+		cmd := `kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f /etc/kubernetes/anp-crd-adminnetworkpolicies.yaml`
 		err := n.sshClient.Command(cmd)
+		if err != nil {
+			return fmt.Errorf("error executing %s: %s", cmd, err)
+		}
+
+		cmd = `kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f /etc/kubernetes/anp-crd-baselineadminnetworkpolicies.yaml`
+		err = n.sshClient.Command(cmd)
+		if err != nil {
+			return fmt.Errorf("error executing %s: %s", cmd, err)
+		}
+
+		cmd = `kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f /etc/kubernetes/knp.yaml`
+		err = n.sshClient.Command(cmd)
 		if err != nil {
 			return fmt.Errorf("error executing %s: %s", cmd, err)
 		}

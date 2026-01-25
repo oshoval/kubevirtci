@@ -142,6 +142,8 @@ flannel_manifest_ipv6="/etc/kubernetes/flannel_ipv6.yaml"
 flannel_ipv6_diff="/tmp/flannel_ipv6.diff"
 knp_manifest="/etc/kubernetes/knp.yaml"
 knp_diff="/tmp/knp.diff"
+anp_crd_admin="/etc/kubernetes/anp-crd-adminnetworkpolicies.yaml"
+anp_crd_baseline="/etc/kubernetes/anp-crd-baselineadminnetworkpolicies.yaml"
 
 cp /tmp/cni.do-not-change.yaml $cni_manifest
 mv /tmp/cni.do-not-change.yaml $cni_manifest_ipv6
@@ -155,6 +157,9 @@ patch $flannel_manifest_ipv6 $flannel_ipv6_diff
 
 cp /tmp/knp.do-not-change.yaml $knp_manifest
 patch $knp_manifest $knp_diff
+
+cp /tmp/anp-crd-adminnetworkpolicies.yaml $anp_crd_admin
+cp /tmp/anp-crd-baselineadminnetworkpolicies.yaml $anp_crd_baseline
 
 cp /tmp/local-volume.yaml /provision/local-volume.yaml
 
@@ -337,6 +342,9 @@ fi
 
 kubectl --kubeconfig=/etc/kubernetes/admin.conf patch deployment coredns -n kube-system -p "$(cat $kubeadmn_patches_path/add-security-context-deployment-patch.yaml)"
 kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f "$flannel_manifest"
+
+kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f "$anp_crd_admin"
+kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f "$anp_crd_baseline"
 kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f "$knp_manifest"
 
 # Wait at least for 7 pods
