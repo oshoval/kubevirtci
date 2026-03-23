@@ -37,7 +37,7 @@ write_files:
           RemainAfterExit=true
 
           [Install]
-          WantedBy=cloud-init.service
+          WantedBy=cloud-init.target
     # Note: bash and libreadline in Fedora 35 come with 'bracketed-paste' mode
     # enabled by default. This results in extra escape sequences in the
     # console output. The mode is explicitly disabled here to make the existing
