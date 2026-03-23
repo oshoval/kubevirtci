@@ -62,4 +62,5 @@ runcmd:
   # breaks FQDN: https://bugzilla.redhat.com/show_bug.cgi?id=2038634
   - |
     sudo sed -i 's/hosts:      files myhostname resolve \[\!UNAVAIL=return\] dns/hosts:      resolve \[\!UNAVAIL=return\] files myhostname dns/' /etc/nsswitch.conf
+  - sudo sed -i '/pam_nologin/d' /etc/pam.d/sshd
   - sudo shutdown
