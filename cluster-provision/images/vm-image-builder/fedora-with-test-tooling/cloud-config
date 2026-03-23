@@ -71,9 +71,13 @@ runcmd:
   - sudo hostnamectl set-hostname "" --transient
   - sudo sed -i '/users_groups/d' /etc/cloud/cloud.cfg
   - sudo sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
-  # Adjust /etc/nsswitch.conf to mitigate the bug with nss-myhostame which
-  # breaks FQDN: https://bugzilla.redhat.com/show_bug.cgi?id=2038634
+  # Prefer "dns" before "resolve" in nsswitch.conf hosts lookup order.
+  # In our test setup, the "resolve" NSS module (systemd-resolved D-Bus path)
+  # can return the local short hostname before DNS search domains are applied,
+  # so "hostname -f" may return only the short name.
+  # Keep "resolve [!UNAVAIL=return]" at the end to preserve fallback semantics.
+  # Note: use a literal block (|) to avoid YAML misinterpreting "hosts:" as a mapping key.
   - |
-    sudo sed -i 's/hosts:      files myhostname resolve \[\!UNAVAIL=return\] dns/hosts:      resolve \[\!UNAVAIL=return\] files myhostname dns/' /etc/nsswitch.conf
+    sudo sed -i 's/^hosts:.*/hosts:      files dns myhostname resolve [!UNAVAIL=return]/' /etc/nsswitch.conf
   - sudo sed -i '/pam_nologin/d' /etc/pam.d/sshd
   - sudo shutdown
