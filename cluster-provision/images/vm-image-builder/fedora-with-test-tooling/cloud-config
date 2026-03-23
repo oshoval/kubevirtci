@@ -52,6 +52,9 @@ write_files:
       content: |
         unset PROMPT_COMMAND PS0
 runcmd:
+  # Fedora 43+ uses predictable network interface names (e.g. enp1s0).
+  # Many KubeVirt tests assume "eth0". Restore classic naming.
+  - sudo grubby --update-kernel=ALL --args="net.ifnames=0 biosdevname=0"
   - sudo systemctl daemon-reload
   - sudo dnf install -y kernel-modules-$(uname -r) qemu-guest-agent stress-ng virt-what vm-dump-metrics tpm2-tools netcat sg3_utils iperf3 wget tcpdump
   # Download the busybox netcat and relpace it with the OpenBSD netcat
