@@ -45,6 +45,12 @@ write_files:
     - path: /etc/profile.d/disable-bracketed-paste.sh
       content: |
         bind 'set enable-bracketed-paste off'
+    # Note: systemd>=258 (Fedora 43+) injects OSC 3008/8003 escape sequences
+    # via PROMPT_COMMAND and PS0 for shell integration. These break goexpect
+    # regex matching in console tests. Disable them at the profile level.
+    - path: /etc/profile.d/disable-systemd-shell-integration.sh
+      content: |
+        unset PROMPT_COMMAND PS0
 runcmd:
   - sudo systemctl daemon-reload
   - sudo dnf install -y kernel-modules-$(uname -r) qemu-guest-agent stress-ng virt-what vm-dump-metrics tpm2-tools netcat sg3_utils iperf3 wget tcpdump
