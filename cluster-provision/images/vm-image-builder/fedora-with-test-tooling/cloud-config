@@ -1,7 +1,11 @@
 #cloud-config
-password: fedora
-chpasswd: { expire: False }
 ssh_pwauth: yes
+chpasswd:
+  users:
+    - name: fedora
+      password: fedora
+      type: text
+  expire: false
 write_files:
     - path: /etc/modules-load.d/mlx5.conf
       content: |
