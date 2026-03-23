@@ -66,13 +66,12 @@ runcmd:
   - sudo grubby --update-kernel=ALL --args="net.ifnames=0 biosdevname=0"
   - sudo systemctl daemon-reload
   - sudo dnf install -y kernel-modules-$(uname -r) qemu-guest-agent stress-ng virt-what vm-dump-metrics tpm2-tools netcat sg3_utils iperf3 wget tcpdump
-  # Download the busybox netcat and relpace it with the OpenBSD netcat
-  # To align with the netcat tool used in the Alpine image for network e2e testing
-  - if [ $(uname -m) == "aarch64" ]; then export CPUARCH="armv8l"; elif [ $(uname -m) == "s390x" ]; then export CPUARCH="s390x"; else export CPUARCH="x86_64"; fi
-  - sudo wget https://busybox.net/downloads/binaries/1.31.0-defconfig-multiarch-musl/busybox-${CPUARCH}
-  - sudo chmod +x busybox-${CPUARCH}
-  - sudo mv /usr/bin/nc /usr/bin/netcat-openbsd
-  - sudo mv busybox-${CPUARCH} /usr/bin/nc
+  # Install nmap-ncat in addition to OpenBSD netcat.
+  # Use "nc" when OpenBSD behavior is needed (cloud-init uses "nc -U").
+  # Use "ncat" when nmap-ncat behavior is needed (--recv-only, --no-shutdown,
+  # and server commands that use --sh-exec in tests).
+  - sudo dnf install -y nmap-ncat
+  - sudo alternatives --set nc /usr/bin/netcat
   - sudo dnf clean all
   - sudo systemctl enable wait-for-cloud-init
   - sudo systemctl enable qemu-guest-agent.service
