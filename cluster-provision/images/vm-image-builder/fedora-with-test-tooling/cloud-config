@@ -69,7 +69,7 @@ runcmd:
   - sudo systemctl enable qemu-guest-agent.service
   - sudo hostnamectl set-hostname ""
   - sudo hostnamectl set-hostname "" --transient
-  - sudo sed -i /users-groups/d /etc/cloud/cloud.cfg
+  - sudo sed -i '/users_groups/d' /etc/cloud/cloud.cfg
   - sudo sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
   # Adjust /etc/nsswitch.conf to mitigate the bug with nss-myhostame which
   # breaks FQDN: https://bugzilla.redhat.com/show_bug.cgi?id=2038634
