@@ -51,6 +51,15 @@ write_files:
     - path: /etc/profile.d/disable-systemd-shell-integration.sh
       content: |
         unset PROMPT_COMMAND PS0
+    # Restrict cloud-init datasource search to NoCloud, ConfigDrive, and None
+    # so that VMs booted without a cloud-init ISO (e.g. Freeze/Unfreeze tests)
+    # complete datasource detection in seconds instead of timing out through
+    # network-based datasources (EC2, Azure, ...) which can take many minutes
+    # on arm64. With NoCloud or ConfigDrive data injected by KubeVirt the
+    # behaviour is unchanged; without data cloud-init falls through to None.
+    - path: /etc/cloud/cloud.cfg.d/99-kubevirt-datasource.cfg
+      content: |
+        datasource_list: [NoCloud, ConfigDrive, None]
 runcmd:
   # Fedora 43+ uses predictable network interface names (e.g. enp1s0).
   # Many KubeVirt tests assume "eth0". Restore classic naming.
