@@ -13,7 +13,7 @@ function getKubernetesClosestStableVersion() {
     kubernetes_minor_version=$(echo $kubernetes_version | cut -d. -f2)
     packages_major_version=$(echo $kubernetes_version | cut -d. -f1)
     packages_minor_version=$((kubernetes_minor_version-1))
-    packages_version="$(curl --fail -L "https://cdn.dl.k8s.io/release/stable-${packages_major_version}.${packages_minor_version}.txt" | sed 's/^v//')"
+    packages_version="$(curl --fail -L "https://dl.k8s.io/release/stable-${packages_major_version}.${packages_minor_version}.txt" | sed 's/^v//')"
   fi
   echo $packages_version
 }
@@ -66,12 +66,12 @@ function pull_container_retry() {
     fi
 }
 
-export CRIO_VERSION=1.35
+export CRIO_VERSION=1.36
 cat << EOF >/etc/yum.repos.d/devel_kubic_libcontainers_stable_cri-o_${CRIO_VERSION}.repo
-[isv_cri-o_stable_v${CRIO_VERSION}]
-name=CRI-O v${CRIO_VERSION} (Stable) (rpm)
+[isv_cri-o_prerelease_v${CRIO_VERSION}]
+name=CRI-O v${CRIO_VERSION} (Prerelease) (rpm)
 type=rpm-md
-baseurl=https://storage.googleapis.com/kubevirtci-crio-mirror/isv_cri-o_stable_v${CRIO_VERSION}
+baseurl=https://download.opensuse.org/repositories/isv:/cri-o:/prerelease:/v${CRIO_VERSION}:/build/rpm
 gpgcheck=0
 enabled=1
 EOF
