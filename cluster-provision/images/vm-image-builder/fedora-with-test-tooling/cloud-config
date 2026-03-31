@@ -88,4 +88,11 @@ runcmd:
   - |
     sudo sed -i 's/^hosts:.*/hosts:      files dns myhostname resolve [!UNAVAIL=return]/' /etc/nsswitch.conf
   - sudo sed -i '/pam_nologin/d' /etc/pam.d/sshd
+  # Ensure boot artifacts are refreshed on IBM Z. If cmdline/kernel artifacts drift,
+  # s390x can panic early with unknown-block and disabled-wait.
+  - |
+    if [ "$(uname -m)" = "s390x" ]; then
+      sudo dracut -f --regenerate-all
+      sudo zipl
+    fi
   - sudo shutdown
