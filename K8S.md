@@ -11,6 +11,12 @@ Start multi node k8s cluster with 2 nics
 export KUBEVIRT_PROVIDER=k8s-1.33 KUBEVIRT_NUM_NODES=2 KUBEVIRT_NUM_SECONDARY_NICS=1 KUBEVIRT_SECONDARY_NIC_BRIDGES=true
 make cluster-up
 ```                                                                                   
+
+Prepare the cluster for the SR-IOV device plugin (run after `make cluster-up`).
+This requires `KUBEVIRT_PROVIDER` `k8s-1.35` or newer:
+```
+./cluster-up/cluster/$KUBEVIRT_PROVIDER/config_sriov_cluster.sh
+```
                                                                                       
 Stop k8s cluster                                                                      
 ```
