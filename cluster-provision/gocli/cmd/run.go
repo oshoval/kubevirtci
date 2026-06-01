@@ -621,7 +621,7 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 			if qemuNetDevice == QEMU_DEVICE_S390X {
 				nodeQemuMonitorArgs = fmt.Sprintf("%s netdev_add tap,id=secondarynet%s,ifname=stap%s,script=no,downscript=no; device_add %s,netdev=secondarynet%s,mac=52:55:00:d1:56:%s;", nodeQemuMonitorArgs, netSuffix, netSuffix, qemuNetDevice, netSuffix, macSuffix)
 			} else { //devices like virtio-net-pci doesn't support hot-plug
-				nodeQemuArgs = fmt.Sprintf("%s -device %s,netdev=secondarynet%s,mac=52:55:00:d1:56:%s -netdev tap,id=secondarynet%s,ifname=stap%s,script=no,downscript=no", nodeQemuArgs, qemuNetDevice, netSuffix, macSuffix, netSuffix, netSuffix)
+				nodeQemuArgs = fmt.Sprintf("%s -device %s,netdev=secondarynet%s,mac=52:55:00:d1:56:%s,bus=pcie.0 -netdev tap,id=secondarynet%s,ifname=stap%s,script=no,downscript=no", nodeQemuArgs, qemuNetDevice, netSuffix, macSuffix, netSuffix, netSuffix)
 			}
 		}
 
@@ -685,7 +685,9 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 		}
 
 		var vmArgsUSBDisks []string
-		const bus = " -device qemu-xhci,id=bus%d"
+		// Pin xHCI controllers to the root PCIe bus to avoid
+		// accidental placement on pxb-pcie (which only accepts bridges).
+		const bus = " -device qemu-xhci,id=bus%d,bus=pcie.0"
 		const drive = " -drive if=none,id=stick%d,format=raw,file=/usb-%d.img"
 		const dev = " -device usb-storage,bus=bus%d.0,drive=stick%d"
 		const usbSizefmt = " --usb-device-size %s"
