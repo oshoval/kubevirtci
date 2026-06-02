@@ -14,6 +14,7 @@ BLOCK_DEV=""
 BLOCK_DEV_SIZE=""
 VM_USER="cloud-user"
 VM_USER_SSH_KEY="vagrant.key"
+ENABLE_IGB=${ENABLE_IGB:-false}
 
 while true; do
   case "$1" in
@@ -70,11 +71,13 @@ until ip link show tap${n}; do
   sleep 0.1
 done
 
-sleep 0.1
-until ip link show tap-sriov${n}; do
-  echo "Waiting for tap-sriov${n} to become ready"
+if [ "$ENABLE_IGB" == "true" ]; then
   sleep 0.1
-done
+  until ip link show tap-sriov${n}; do
+    echo "Waiting for tap-sriov${n} to become ready"
+    sleep 0.1
+  done
+fi
 
 ROOTLESS=0
 if [ -f /run/.containerenv ]; then
@@ -191,6 +194,7 @@ if [ "$n" = "01" ] ; then
 fi
 
 numa_arg=""
+sriov_pxb_numa_arg=""
 if [ "${NUMA}" -gt 1 ]; then
     numa_mem_unit="${MEMORY//[[:digit:]]/}"
     numa_mem_value="${MEMORY//[!0-9]/}"
@@ -207,6 +211,15 @@ if [ "${NUMA}" -gt 1 ]; then
         numa_arg+=" -numa node,nodeid=${node_id},memdev=m${node_id},cpus=${node_first_cpu}-${node_last_cpu}"
         node_first_cpu=$((node_last_cpu + 1))
     done
+    sriov_pxb_numa_arg=",numa_node=0"
+fi
+
+qemu_sriov_args=""
+if [ "$ENABLE_IGB" == "true" ]; then
+  qemu_sriov_args="-device pxb-pcie,id=sriovpxb,bus=pcie.0,bus_nr=128${sriov_pxb_numa_arg} \
+    -device pcie-root-port,id=sriovrp,slot=3,chassis=3,bus=sriovpxb \
+    -device igb,id=igb0,bus=sriovrp,netdev=sriovnet0,mac=52:55:00:d1:57:${n} \
+    -netdev tap,id=sriovnet0,ifname=tap-sriov${n},script=no,downscript=no"
 fi
 
 if [ "$(uname -m)" == "s390x" ]; then
@@ -232,11 +245,6 @@ if [ "$(uname -m)" == "s390x" ]; then
     -monitor unix:/tmp/qemu-monitor.sock,server,nowait \
     ${QEMU_ARGS}"
 else
-  sriov_pxb_numa_arg=""
-  if [ "${NUMA}" -gt 1 ]; then
-    sriov_pxb_numa_arg=",numa_node=0"
-  fi
-
   #Docs: https://www.qemu.org/docs/master/system/invocation.html
   qemu_system_cmd="qemu-system-x86_64 \
     -enable-kvm \
@@ -245,10 +253,7 @@ else
     ${BLOCK_DEV:+ -device virtio-blk-pci,drive=extdisk,bus=pcie.0} \
     -device virtio-net-pci,netdev=network0,mac=52:55:00:d1:55:${n},bus=pcie.0 \
     -netdev tap,id=network0,ifname=tap${n},script=no,downscript=no \
-    -device pxb-pcie,id=sriovpxb,bus=pcie.0,bus_nr=128${sriov_pxb_numa_arg} \
-    -device pcie-root-port,id=sriovrp,slot=3,chassis=3,bus=sriovpxb \
-    -device igb,id=igb0,bus=sriovrp,netdev=sriovnet0,mac=52:55:00:d1:57:${n} \
-    -netdev tap,id=sriovnet0,ifname=tap-sriov${n},script=no,downscript=no \
+    ${qemu_sriov_args} \
     -device virtio-rng-pci,bus=pcie.0 \
     -initrd /initrd.img \
     -kernel /vmlinuz \

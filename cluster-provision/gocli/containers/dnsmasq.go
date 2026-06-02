@@ -16,6 +16,7 @@ type DNSMasqOptions struct {
 	ClusterImage       string
 	NodeCount          uint
 	SecondaryNicsCount uint
+	EnableIGB          bool
 	RandomPorts        bool
 	PortMap            nat.PortMap
 	Prefix             string
@@ -43,21 +44,22 @@ func DNSMasq(cli *client.Client, ctx context.Context, options *DNSMasqOptions) (
 		Env: []string{
 			fmt.Sprintf("NUM_NODES=%d", options.NodeCount),
 			fmt.Sprintf("NUM_SECONDARY_NICS=%d", options.SecondaryNicsCount),
+			fmt.Sprintf("ENABLE_IGB=%t", options.EnableIGB),
 		},
 		Cmd: []string{"/bin/bash", "-c", "/dnsmasq.sh"},
 		ExposedPorts: nat.PortSet{
-			utils.TCPPortOrDie(utils.PortSSH):         {},
-			utils.TCPPortOrDie(utils.PortRegistry):    {},
-			utils.TCPPortOrDie(utils.PortOCP):         {},
-			utils.TCPPortOrDie(utils.PortAPI):         {},
-			utils.TCPPortOrDie(utils.PortVNC):         {},
-			utils.TCPPortOrDie(utils.PortHTTP):        {},
-			utils.TCPPortOrDie(utils.PortHTTPS):       {},
-			utils.TCPPortOrDie(utils.PortPrometheus):  {},
-			utils.TCPPortOrDie(utils.PortGrafana):     {},
-			utils.TCPPortOrDie(utils.PortUploadProxy): {},
+			utils.TCPPortOrDie(utils.PortSSH):                  {},
+			utils.TCPPortOrDie(utils.PortRegistry):             {},
+			utils.TCPPortOrDie(utils.PortOCP):                  {},
+			utils.TCPPortOrDie(utils.PortAPI):                  {},
+			utils.TCPPortOrDie(utils.PortVNC):                  {},
+			utils.TCPPortOrDie(utils.PortHTTP):                 {},
+			utils.TCPPortOrDie(utils.PortHTTPS):                {},
+			utils.TCPPortOrDie(utils.PortPrometheus):           {},
+			utils.TCPPortOrDie(utils.PortGrafana):              {},
+			utils.TCPPortOrDie(utils.PortUploadProxy):          {},
 			utils.TCPPortOrDie(utils.PortUploadProxyLowerBand): {},
-			utils.UDPPortOrDie(utils.PortDNS):         {},
+			utils.UDPPortOrDie(utils.PortDNS):                  {},
 		},
 	}, &container.HostConfig{
 		Privileged:      true,

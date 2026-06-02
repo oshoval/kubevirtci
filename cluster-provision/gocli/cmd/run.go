@@ -112,6 +112,7 @@ func NewRunCommand() *cobra.Command {
 	run.Flags().UintP("cpu", "c", 2, "number of cpu cores per node")
 	run.Flags().UintP("secondary-nics", "", 0, "number of secondary nics to add")
 	run.Flags().Bool("enable-secondary-nic-bridges", false, "create bridge devices for secondary NICs")
+	run.Flags().Bool("enable-igb", false, "attach an emulated igb interface to each node")
 	run.Flags().String("qemu-args", "", "additional qemu args to pass through to the nodes")
 	run.Flags().String("kernel-args", "", "additional kernel args to pass through to the nodes")
 	run.Flags().BoolP("background", "b", true, "go to background after nodes are up")
@@ -246,6 +247,11 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 	}
 
 	secondaryNicBridges, err := cmd.Flags().GetBool("enable-secondary-nic-bridges")
+	if err != nil {
+		return err
+	}
+
+	enableIGB, err := cmd.Flags().GetBool("enable-igb")
 	if err != nil {
 		return err
 	}
@@ -501,6 +507,7 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 		dnsmasq, err = containers2.DNSMasq(cli, ctx, &containers2.DNSMasqOptions{
 			ClusterImage:       clusterImage,
 			SecondaryNicsCount: secondaryNics,
+			EnableIGB:          enableIGB,
 			RandomPorts:        randomPorts,
 			PortMap:            portMap,
 			Prefix:             prefix,
@@ -752,6 +759,7 @@ func run(cmd *cobra.Command, args []string) (retErr error) {
 			Image: clusterImage,
 			Env: []string{
 				fmt.Sprintf("NODE_NUM=%s", nodeNum),
+				fmt.Sprintf("ENABLE_IGB=%t", enableIGB),
 			},
 			Cmd: []string{"/bin/bash", "-c", fmt.Sprintf("/vm.sh -n /var/run/disk/disk.qcow2 --memory %s --cpu %s --numa %s %s %s %s %s %s %s",
 				memory,

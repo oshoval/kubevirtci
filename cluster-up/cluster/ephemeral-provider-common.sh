@@ -95,6 +95,10 @@ function _add_common_params() {
         params=" --enable-secondary-nic-bridges $params"
     fi
 
+    if [ "$KUBEVIRT_ENABLE_IGB" == "true" ]; then
+        params=" --enable-igb $params"
+    fi
+
     if [[ $TARGET =~ windows_sysprep.* ]] && [ -n "$WINDOWS_SYSPREP_NFS_DIR" ]; then
         params=" --nfs-data $WINDOWS_SYSPREP_NFS_DIR $params"
     elif [[ $TARGET =~ windows.* ]] && [ -n "$WINDOWS_NFS_DIR" ]; then
